@@ -1,0 +1,15 @@
+{
+    "C++": {
+        "needcompile": true,
+        "extension": "cpp",
+        "compilerun": "g++ -std=c++17 $ -o ^.exe && ^.exe"
+    },
+    "Python": {
+        "extension": "py",
+        "run": "py $"
+    },
+    "Coly": {
+        "extension": "cly",
+        "run": "coly $"
+    }
+}

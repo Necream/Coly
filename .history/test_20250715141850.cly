@@ -1,0 +1,3 @@
+import lib ./testlib.cly
+print $Input
+use start_py

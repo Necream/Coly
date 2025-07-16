@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "*.GXc": "json",
+        "*.GXv": "json",
+        "xstring": "cpp",
+        "fstream": "cpp",
+        "iostream": "cpp",
+        "xtree": "cpp",
+        "filesystem": "cpp"
+    },
+    "code-runner.executorMapByFileExtension": {
+        ".cly": "./coly $fileName",
+    }
+}

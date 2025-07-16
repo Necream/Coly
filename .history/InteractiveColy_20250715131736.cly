@@ -1,0 +1,6 @@
+print Hello! Here is InteractiveColy!
+define code named interact with Coly
+|printwithoutanewline >>>
+|define var named varname with $Input
+|do $Input
+use code 

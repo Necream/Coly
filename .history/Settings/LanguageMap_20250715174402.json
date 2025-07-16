@@ -1,0 +1,15 @@
+{
+    "C++": {
+        "extension": "cpp",
+        "exeextension": "exe",
+        "run": "g++ -std=c++17 $ -o ^.exe && ^.exe"
+    },
+    "Python": {
+        "extension": "py",
+        "run": "py $"
+    },
+    "Coly": {
+        "extension": "cly",
+        "run": "coly $"
+    }
+}

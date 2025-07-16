@@ -1,0 +1,7 @@
+{
+    "C++": {
+        "extension": "cpp",
+        "compile": "g++ -std=c++17 $input -o target.exe"
+    }
+    
+}

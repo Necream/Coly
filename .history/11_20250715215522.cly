@@ -1,0 +1,13 @@
+#初始定义两个变量
+define var named Input
+define var named InputLine
+#分别对两个Input输入并展示结果
+printwithoutanewline Input:
+print $Input
+
+printwithoutanewline InputLine:
+print $InputLine
+print
+print Press Enter to continue...
+#这里的NULL变量没有用到，无需处理。
+define var named NULL with $InputLine

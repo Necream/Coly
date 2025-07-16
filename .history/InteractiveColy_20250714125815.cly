@@ -1,0 +1,4 @@
+print Hello! Here is InteractiveColy!
+define var named interact with Coly
+|printwithoutanewline >>>
+jump interact

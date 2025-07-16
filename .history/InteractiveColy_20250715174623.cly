@@ -1,0 +1,138 @@
+print Hello! Here is InteractiveColy!
+define var named InputLine
+define code named cpp with C++
+|#include <iostream>
+|using namespace std;
+|int main(){cout<<"C++"}
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname

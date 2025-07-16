@@ -1,0 +1,6 @@
+print Hello! Here is InteractiveColy!
+define var named InputLine
+define position
+printwithoutanewline >>>
+define var named varname with $InputLine
+do $varname
