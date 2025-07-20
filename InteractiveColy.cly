@@ -1,3 +1,8 @@
+define var named var1 with 1
+define var named var2 with 1
+define code named 1 with Coly
+|exit
+if $var1 $var2 1
 print Coly v0.1.0
 print Hello! Here is InteractiveColy!
 print You can't use import here, see the document to learn more.

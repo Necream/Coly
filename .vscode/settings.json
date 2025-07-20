@@ -9,6 +9,6 @@
         "filesystem": "cpp"
     },
     "code-runner.executorMapByFileExtension": {
-        ".cly": "./coly $fileName",
+        ".cly": " ./coly.exe $fileName",
     }
 }

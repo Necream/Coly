@@ -117,10 +117,10 @@ define var named NULL with $InputLine
 #### if
 
 `if`是**新增内容**。
-`if`能够在Coly中判断某些内容。
+`if`能够在Coly中判断两个变量是否相等。**请注意，`type`分别为`code`和`var`的变量不影响比较。**
 用法
 ```coly
-
+if $var1 $var2 codename
 ```
 
 #### 库文件

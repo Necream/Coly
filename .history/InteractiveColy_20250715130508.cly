@@ -1,5 +1,0 @@
-print Hello! Here is InteractiveColy!
-printwithoutanewline >>>
-define var named varname with 1
-print $varname
-print Hello.

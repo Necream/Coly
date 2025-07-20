@@ -1,3 +1,0 @@
-import lib D:\UDisk\Codes\ColyForWindows\teslib.cly
-print $Input
-use start_py

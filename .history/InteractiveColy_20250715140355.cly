@@ -1,7 +1,0 @@
-print Hello! Here is InteractiveColy!
-define code named interact with Coly
-|define var named InputLine
-|printwithoutanewline >>>
-|define var named  with $InputLine
-|do $
-jump interact

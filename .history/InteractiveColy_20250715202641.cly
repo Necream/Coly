@@ -1,6 +1,0 @@
-print Hello! Here is InteractiveColy!
-define var named InputLine
-define 
-printwithoutanewline >>>
-define var named varname with $InputLine
-do $varname

@@ -1,5 +1,0 @@
-define var named Input
-define var named InputLine
-define code named start_py with C++
-|#include <iostream>
-|

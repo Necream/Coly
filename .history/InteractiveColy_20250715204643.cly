@@ -1,8 +1,0 @@
-print Coly
-print Hello! Here is InteractiveColy!
-define var named InputLine
-define position named for
-printwithoutanewline >>>
-define var named varname with $InputLine
-do $varname
-jump for

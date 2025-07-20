@@ -287,7 +287,6 @@ void print(const string &content) {
 void addressline(string line,int *lineid){
     static bool defined = false;
     static defineinfo info;
-    static
     for(int i=0;i<operationlist.size();i++){
         string content = line;
         if(defined && info.type == "code" && content[0] == '|'){
