@@ -352,7 +352,7 @@ void addressline(string line,int *lineid){
                 addressline(command, fake_lineid);
             } else if (operationlist[i] == "exit") {
                 exit(0);
-            } else if(operationlist[i] == "if") {
+            } else else if(operationlist[i] == "if") {
                 // cout << "If: " << content << endl;
                 int varnum=0;
                 defineinfo var1,var2;
@@ -383,7 +383,8 @@ void addressline(string line,int *lineid){
                 }
                 // cout<<var1.getvalue()<<var2.getvalue();
                 if(var1.getvalue()==var2.getvalue()) usedefine(varname);
-            } else {
+            }
+            {
                 cout << "Error: Unknown operation: " << operationlist[i] << endl;
             }
             return;

@@ -352,38 +352,8 @@ void addressline(string line,int *lineid){
                 addressline(command, fake_lineid);
             } else if (operationlist[i] == "exit") {
                 exit(0);
-            } else if(operationlist[i] == "if") {
-                // cout << "If: " << content << endl;
-                int varnum=0;
-                defineinfo var1,var2;
-                string varname;
-                for(char c : content){
-                    if(c=='$'){
-                        varnum++;
-                    } else if(c==' '){
-                        if(varnum == 1) {
-                            if(definedcode.find(varname)!=definedcode.end()){
-                                var1=definedcode[varname];
-                            } else if(definedvar.find(varname)!=definedvar.end()){
-                                var1=definedvar[varname];
-                            } else {
-                                cout << "Error: Undefined variable: " << varname << endl;
-                            }
-                        } else if (varnum == 2) {
-                            if(definedcode.find(varname)!=definedcode.end()){
-                                var2=definedcode[varname];
-                            } else if(definedvar.find(varname)!=definedvar.end()){
-                                var2=definedvar[varname];
-                            } else {
-                                cout << "Error: Undefined variable: " << varname << endl;
-                            }
-                        }
-                        varname="";
-                    } else varname+=c;
-                }
-                // cout<<var1.getvalue()<<var2.getvalue();
-                if(var1.getvalue()==var2.getvalue()) usedefine(varname);
-            } else {
+            } else
+            {
                 cout << "Error: Unknown operation: " << operationlist[i] << endl;
             }
             return;
