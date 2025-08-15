@@ -6,9 +6,12 @@
         "fstream": "cpp",
         "iostream": "cpp",
         "xtree": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "vector": "cpp",
+        "memory": "cpp"
     },
     "code-runner.executorMapByFileExtension": {
         ".cly": " ./coly.exe $fileName",
-    }
+    },
+    "C_Cpp.default.compilerPath": "d:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\Hostx64\\x64\\cl.exe"
 }
