@@ -81,19 +81,12 @@ namespace GXPass {
         return c12c2<type, std::string>(sum);
     }
 
-    // 编译入口，调用各种密码运算  version:-1最新，0基础，1顺序重置
+    // 编译入口，调用各种密码运算  
     template<class type = unsigned long long>
     std::string compile(const std::string& data, int version = -1) {
         std::string ret;
         switch (version) {
             case -1: // latest
-            case 1: {
-                ret += dxsum1<type>(data);
-                ret += sum<type>(data);
-                ret += dxsum2<type>(data);
-                ret += ksmsum<type>(data);
-                break;
-            }
             case 0: {
                 ret += sum<type>(data);
                 ret += dxsum1<type>(data);

@@ -87,13 +87,6 @@ namespace GXPass {
         std::string ret;
         switch (version) {
             case -1: // latest
-            case 1: {
-                ret += dxsum1<type>(data);
-                ret += sum<type>(data);
-                ret += dxsum2<type>(data);
-                ret += ksmsum<type>(data);
-                break;
-            }
             case 0: {
                 ret += sum<type>(data);
                 ret += dxsum1<type>(data);
