@@ -5,6 +5,7 @@
 #include <map>
 #include <cstdlib>
 #include <vector>
+#include <Windows.h>
 #include "json.hpp"
 #include "GXPass.hpp"
 using namespace std;
