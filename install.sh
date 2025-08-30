@@ -1,6 +1,6 @@
 echo "Be sure to run this script with sudo (e.g., 'sudo ./install.sh') to ensure proper permissions."
 mkdir /lib/Coly
-cp Coly /lib/Coly
+cp ./build/Coly /lib/Coly
 chmod +x /lib/Coly
 cp ./Settings/LanguageMap.json /lib/Coly/Settings/LanguageMap.json
 cp ./InteractiveColy.cly /lib/Coly/InteractiveColy.cly
