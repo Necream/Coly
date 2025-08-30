@@ -1,4 +1,4 @@
-then echo "Be sure to run this script with sudo (e.g., 'sudo ./install.sh') to ensure proper permissions."
+echo "Be sure to run this script with sudo (e.g., 'sudo ./install.sh') to ensure proper permissions."
 mkdir /lib/Coly
 cp Coly /lib/Coly
 chmod +x /lib/Coly
