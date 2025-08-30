@@ -1,7 +1,4 @@
-if [ "$EUID" -ne 0 ]
-    then echo "Be sure to run this script with sudo (e.g., 'sudo ./install.sh') to ensure proper permissions."
-    exit
-fi
+then echo "Be sure to run this script with sudo (e.g., 'sudo ./install.sh') to ensure proper permissions."
 mkdir /lib/Coly
 cp Coly /lib/Coly
 chmod +x /lib/Coly
