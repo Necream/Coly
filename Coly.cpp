@@ -8,6 +8,11 @@
 #include "json.hpp"
 #include "GXPass.hpp"
 using namespace std;
+#ifdef _WIN32
+#define LIBPATH "C:\\Coly\\lib\\"
+#else
+#define LIBPATH "/lib/Coly/lib/"
+#endif
 // Map to store the line number of defined variables, codes and positions
 // This is used to check if a variable or code is defined before use
 map<string, int> definedline;
@@ -73,7 +78,16 @@ map<string, bool> compiledcode;
 // ifn: if not, execute a code
 // if: if, execute a code
 vector<string> operationlist = {
-    "define", "use", "jump", "printwithoutanewline", "print", "do", "exit", "ifn", "if"
+    "define",
+    "use",
+    "jump",
+    "printwithoutanewline",
+    "print",
+    "do",
+    "exit",
+    "ifn",
+    "if",
+    "import lib"
 };
 // Get the prefix of a string with a specified length
 string prefix(string str,int len){
@@ -136,7 +150,9 @@ defineinfo judgedefine(string content){
 #ifdef _WIN32
 // Get the file extension for a given language from LanguageMap.json
 string getextension(const string language) {
-    FILE *stream=fopen("./Settings/LanguageMap.json", "r");
+    string LanguageJSONPath = LIBPATH;
+    LanguageJSONPath+="Settings/LanguageMap.json";
+    FILE *stream=fopen(LanguageJSONPath.c_str(), "r");
     if (!stream) {
         cout << "Error: Cannot open LanguageMap.json" << endl;
         return ".txt"; // Default extension if file cannot be opened
@@ -310,6 +326,7 @@ void print(const string &content) {
         }else cout << c;
     }
 }
+vector<string> readCly(string path);
 // Address a line of code, handling different operations like define, use, jump, import, print, etc.
 // This function processes a line of code and performs the corresponding operation
 void addressline(string line,int *lineid){
@@ -411,8 +428,42 @@ void addressline(string line,int *lineid){
                     } else varname+=c;
                     // else break;
                 }
-                cout<<var1<<endl<<var2<<endl<<varname<<endl;
+                // cout<<var1<<endl<<var2<<endl<<varname<<endl;
                 if(var1.getvalue()==var2.getvalue()) usedefine(varname);
+            } else if(operationlist[i] == "ifn") {
+                // cout << "Ifn: " << content << endl;
+                int varnum=0;
+                defineinfo var1,var2;
+                string varname;
+                for(char c : content){
+                    if(c=='$'){
+                        varnum++;
+                    } else if(c==' '){
+                        if(varnum == 1) {
+                            if(definedcode.find(varname)!=definedcode.end()){
+                                var1=definedcode[varname];
+                            } else if(definedvar.find(varname)!=definedvar.end()){
+                                var1=definedvar[varname];
+                            } else {
+                                cout << "Error: Undefined variable: " << varname << endl;
+                            }
+                        } else if (varnum == 2) {
+                            if(definedcode.find(varname)!=definedcode.end()){
+                                var2=definedcode[varname];
+                            } else if(definedvar.find(varname)!=definedvar.end()){
+                                var2=definedvar[varname];
+                            } else {
+                                cout << "Error: Undefined variable: " << varname << endl;
+                            }
+                        }
+                        varname="";
+                    } else varname+=c;
+                    // else break;
+                }
+                // cout<<var1<<endl<<var2<<endl<<varname<<endl;
+                if(var1.getvalue()!=var2.getvalue()) usedefine(varname);
+            } else if(operationlist[i] == "import lib"){
+                useCly(readCly(content));
             } else {
                 cout << "Error: Unknown operation: " << operationlist[i] << endl;
             }
@@ -435,7 +486,7 @@ vector<string> readCly(string path){
             bool isabs = false;
             for(char c:importpath) if(c == ':'){ isabs = true; break; }
             if(!isabs){
-                importpath = "D:\\Coly\\lib\\" + importpath;
+                importpath = LIBPATH + importpath;
             }
             vector<string> importinfo=readCly(importpath);
             for(string importline : importinfo){

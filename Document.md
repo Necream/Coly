@@ -92,10 +92,13 @@ print Hello, World!
 
 `do`允许你直接在当前环境下将变量代码化并立即执行，可用于编写交互性的Coly程序。
 
-#### \$Input和\$InputLine
+#### 功能变量
 
-这是两个相似的变量，使用之前需要提前声明。
-这两个变量具有特殊的功能，`$Input`和`$InputLine`能够获取用户的输入，但`$Input`仅获取到下一个空格或换行，而`$InputLine`一直获取到换行。
+功能变量例如`Input`，能够让你在使用时进行一定的交互，使用之前需要提前声明。
+
+##### Input InputLine
+
+`$Input`和`$InputLine`能够获取用户的输入，但`$Input`仅获取到下一个空格或换行，而`$InputLine`一直获取到换行。
 用法示例
 ```Coly
 #初始定义两个变量
@@ -120,7 +123,7 @@ define var named NULL with $InputLine
 `if`能够在Coly中判断两个变量是否相等。**请注意，`type`分别为`code`和`var`的变量不影响比较。**
 用法
 ```coly
-if $var1 $var2 codename
+if $var1 $var2 codename/placename
 ```
 
 #### 库文件
