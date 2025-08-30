@@ -327,6 +327,7 @@ void print(const string &content) {
     }
 }
 vector<string> readCly(string path);
+void useCly(vector<string> lines);
 // Address a line of code, handling different operations like define, use, jump, import, print, etc.
 // This function processes a line of code and performs the corresponding operation
 void addressline(string line,int *lineid){
