@@ -27,7 +27,7 @@ echo "You need g++ to build this project."
 echo "If you have it installed, please run this script."
 
 # 是否更新
-read -p "Do you want to update GXPass.hpp to the latest version? (Y/N): " choice
+read -p "Do you want to update GXPass.hpp and Coly to the latest version? (Y/N): " choice
 case "$choice" in
     [Yy]* ) update_gxpass ;;
     [Nn]* ) echo "Skipping update..." ;;
@@ -45,6 +45,7 @@ case "$choice" in
             read -p "Do you want to update GXPass and retry? (Y/N): " retry_choice
             case "$retry_choice" in
                 [Yy]* )
+                    git pull
                     update_gxpass
                     g++ Coly.cpp -o build/Coly -I.
                     if [ $? -ne 0 ]; then
