@@ -15,7 +15,18 @@ update_gxpass() {
     echo "Updating GXPass.hpp..."
     mkdir -p temp
     cd temp || exit 1
-    git clone https://github.com/Necream/GXPass.git
+
+    if [ -d "GXPass" ]; then
+        echo "GXPass repo exists, pulling latest changes..."
+        cd GXPass || exit 1
+        git fetch --all
+        git reset --hard origin/main
+        cd ..
+    else
+        echo "Cloning GXPass repo..."
+        git clone https://github.com/Necream/GXPass.git
+    fi
+
     cp GXPass/GXPass.hpp ../
     cd ..
     rm -rf temp
