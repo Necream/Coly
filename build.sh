@@ -13,7 +13,6 @@ fi
 # 更新 GXPass 的函数
 update_gxpass() {
     echo "Updating GXPass.hpp..."
-    git pull
     mkdir -p temp
     cd temp || exit 1
     git clone https://github.com/Necream/GXPass.git
@@ -29,7 +28,12 @@ echo "If you have it installed, please run this script."
 # 是否更新
 read -p "Do you want to update GXPass.hpp and Coly to the latest version? (Y/N): " choice
 case "$choice" in
-    [Yy]* ) update_gxpass ;;
+    [Yy]* )
+        update_gxpass
+        git fetch --all
+        git reset --hard origin/main
+        git pull
+        ;;
     [Nn]* ) echo "Skipping update..." ;;
     * ) echo "Invalid choice. Please enter Y or N."; exit 1 ;;
 esac
@@ -45,7 +49,6 @@ case "$choice" in
             read -p "Do you want to update GXPass and retry? (Y/N): " retry_choice
             case "$retry_choice" in
                 [Yy]* )
-                    git pull
                     update_gxpass
                     g++ Coly.cpp -o build/Coly -I.
                     if [ $? -ne 0 ]; then
