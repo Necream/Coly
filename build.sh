@@ -57,4 +57,7 @@ case "$choice" in
         ;;
 esac
 
+echo "Build complete. You can run 'sudo ./install.sh' to install Coly now."
+echo "(We're so sorry that we need to do this, but it's for your better experience.)"
+
 exit 0

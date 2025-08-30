@@ -133,6 +133,7 @@ defineinfo judgedefine(string content){
     // cout<<info<<endl;
     return info;
 }
+#ifdef _WIN32
 // Get the file extension for a given language from LanguageMap.json
 string getextension(const string language) {
     FILE *stream=fopen("./Settings/LanguageMap.json", "r");
@@ -155,6 +156,29 @@ string getextension(const string language) {
     }
     return json[language]["extension"].get<string>();
 }
+#else
+string getextension(const string language) {
+    FILE *stream=fopen("/lib/Coly/Settings/LanguageMap.json", "r");
+    if (!stream) {
+        cout << "Error: Cannot open LanguageMap.json" << endl;
+        return ".txt"; // Default extension if file cannot be opened
+    }
+    int c=0;
+    string fileinfo;
+    while((c=fgetc(stream))!=-1){
+        fileinfo += (char)c;
+    }
+    fclose(stream);
+    nlohmann::json json;
+    try {
+        json = nlohmann::json::parse(fileinfo);
+    } catch (const nlohmann::json::parse_error& e) {
+        cout << "Error: JSON parse error: " << e.what() << endl;
+        return ""; // Default extension if parsing fails
+    }
+    return json[language]["extension"].get<string>();
+}
+#endif
 // Get the need of compile for a given language from LanguageMap.json
 bool getneedcompile(const string language) {
     FILE *stream=fopen("./Settings/LanguageMap.json", "r");
@@ -437,6 +461,7 @@ void useCly(vector<string> lines){
         }
     }
 }
+#ifdef _WIN32
 // Main function to run the Coly interpreter
 // It takes command line arguments to specify the Coly file to run
 int main(int argc, char *argv[]){
@@ -450,3 +475,16 @@ int main(int argc, char *argv[]){
     //TODO: save variables to a file
     return 0;
 }
+#else
+int main(int argc, char *argv[]){
+    //TODO: read variables from a file
+    if(argc==1){
+        useCly(readCly("/lib/Coly/InteractiveColy.cly"));
+    }
+    if(argc==2){
+        useCly(readCly(argv[1]));
+    }
+    //TODO: save variables to a file
+    return 0;
+}
+#endif

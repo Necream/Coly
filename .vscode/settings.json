@@ -8,7 +8,8 @@
         "xtree": "cpp",
         "filesystem": "cpp",
         "vector": "cpp",
-        "memory": "cpp"
+        "memory": "cpp",
+        "string": "cpp"
     },
     "code-runner.executorMapByFileExtension": {
         ".cly": " ./coly.exe $fileName",
