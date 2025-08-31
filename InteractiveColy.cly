@@ -1,6 +1,6 @@
 print Coly v0.1.0
 print Hello! Here is InteractiveColy!
-print You can't use import here, see the document to learn more.
+print You can use import here, see the document to learn more.
 define var named InputLine
 define position named for
 printwithoutanewline >>>

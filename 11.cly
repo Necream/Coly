@@ -1,3 +1,0 @@
-define var named varname with Hello, Coly!
-print $varname
-print Hello, World!

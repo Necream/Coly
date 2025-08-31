@@ -6,15 +6,26 @@ This document was edited in **Chinese**.
 
 ## Coly语言
 
+**请注意，v0.3.0版本需要你手动启动Server之后才能运行Coly**
+
 一个**简单易学**的编程语言，支持再一段代码中引用其他编程语言来便利初学者，这样你就可以充分发挥各个编程语言的长处来**节约代码量**。
 Coly采用了语言逻辑而非数学逻辑，使代码可读性更高。但**缺点是代码的编写简易程度降低**。
 **Coly会长期更新**，并且每次更新都会保证一定的兼容性。
+Coly能够在不同的代码段之间**同步变量**来保证你的开发效率。
 
 ### 特性
 
-- Coly会自动同步你的代码中的全局变量，这依赖对代码进行分析。请注意，你的部分自定义类型的变量不会进行同步，因为我们无法确定你的类型怎样进行同步。**在Coly v0.1.0中不可用**
+- Coly会自动同步你的代码中的全局变量，这依赖对代码进行分析。请注意，你的部分自定义类型的变量不会进行同步，因为我们无法确定你的类型怎样进行同步，除非你手动进行同步。 ~~**在Coly v0..0中不可用**~~ **在Coly v0.3.0中部分可用**
 - 我们会默认支持C++和Python，如果你有其他语言变量同步的需求，请你自行编写同步程序或者在网络上搜索可用的程序。**但请注意，如果你使用来自网络上的程序，我们无法保证你的电脑和代码的安全性。如果你不信任开发者，请你备份好你的代码。**
-- **InteractiveColy中的import因为Coly的性能优化不可用！**
+- ~~**InteractiveColy中的import因为Coly的性能优化不可用！**~~ **在v0.3.0以后，import成为了一条新的指令，你可以在InteractiveColy中使用，且原来的性能优化没有被删除，我们保留了两部分的代码。**
+- 请注意，如果你频繁使用需要编译的语言，你的语言可能**会重新编译**，这个问题会在以后的更新中修复。
+
+#### 变量同步
+
+- 在v0.3.0之后，Coly中的变量支持同步。在以后的更新中会支持第三方的语言并且允许扩展。
+- 你的SubProcess继承Process的所有变量，且**访问权限与Process相同**。
+- 不同的Process之间无法互相访问！
+- 变量同步使用网络。如果你同意的话，你可以**为Server暴露**，这样你可以分享你的IP并于其他人共享数据。
 
 ---
 
@@ -36,6 +47,8 @@ use code 1
 ---
 
 ### 基础语法
+
+实在抱歉，下方的内容没有顺序，您可以通读，毕竟Coly是一个十分轻量的语言。
 
 #### 注释
 
@@ -63,7 +76,7 @@ Coly注释的语法与Python一致，**但不支持Python的多行注释**，**�
 **请注意Coly没有其他语言标准意义上的变量，如果需要变量处理建议引用其他语言。Coly中的变量均以string存储，不支持任何运算。**
 **在代码块之间进行变量同步时，不会导致变量类型改变。**
 
-#### 变量代码化 *在Coly v0.1.0中暂不支持*
+#### 变量代码化 *在Coly v0.3.0中暂不支持*
 
 这个功能使你能够编写**与JIT有关的内容**，你可以把代码存储在变量中，然后使用`define code named codename with $LanguageType | $CodeInfo`来使变量代码化，之后你就可以通过`use code codename`来调用你的代码。**请注意，变量代码化对应的代码必须写在同一行内。**
 
@@ -117,10 +130,11 @@ print Press Enter to continue...
 define var named NULL with $InputLine
 ```
 
-#### if
+#### if ifn
 
-`if`是**新增内容**。
-`if`能够在Coly中判断两个变量是否相等。**请注意，`type`分别为`code`和`var`的变量不影响比较。**
+`if`和`ifn`是**新增内容**。
+`if`和`ifn`能够在Coly中判断两个变量是否相等。如果相等，`if`会执行后方的code，`ifn`则不会，若不相等则反之。
+**请注意，`type`分别为`code`和`var`的变量不影响比较。**
 用法
 ```coly
 if $var1 $var2 codename/placename
@@ -129,4 +143,78 @@ if $var1 $var2 codename/placename
 #### 库文件
 
 库文件是**新增内容**，在Aug 31, 2024的文档中没有体现。
-你可以通过引用库文件来使用别人已经提供的代码块。具体方法是者`import lib ...`
+你可以通过引用库文件来使用别人已经提供的代码块。具体方法是`import lib ...`
+在v0.3.0版本中引入了**ColyVariableSyncService**，并且你可以在交互状态下使用`import lib ...`
+
+#### commitvaroperation
+
+`commitvaroperation`允许你直接向**VariableSyncServer**发起请求，以便多元的开发流程。
+**请注意如果遇到问题，你会收到错误信息，并且在Server的控制台/日志中会有体现。你需要自行解决错误信息带来的影响。在Coly中，我们已经加入了错误判断。**
+用法
+```Coly
+#向ColyVariableSyncServer发起注册子进程的请求。
+commitvaroperation reg subprocess 123
+```
+
+##### 所有的请求
+
+下面是可用指令的树结构，使用方法是从树根节点开始向下延伸直到子节点**再加上备注的信息。**
+
+- set
+    - var *JSON，格式详见下方VarContainer说明*
+    - process *JSON，格式详见下方ProcessContainer说明*
+- get
+    - var *VarName*
+    - process
+- sync
+    - var *JSON*
+    - process
+- del
+    - var *VarName*
+    - process
+- reg
+    - process *ProcessID，通常可用时间戳*
+    - subprocess *SubprocessID*
+- login
+    - subprocess *SubprocessID*
+
+下面是两个JSON的结构，你也可以通过Coly目录下的`client`来获取，具体方法是
+```VariableSync
+reg process test
+set var {"Name":"1","Value":"1",Timestamp:1}
+get var 1
+get process
+```
+
+###### VarContainer的JSON结构
+
+```JSON
+{
+    "Name": "VarName",
+    "Value": "Your Var Value",
+    "Timestamp": 123456
+}
+```
+
+###### ProcessContainer的JSON结构
+
+```JSON
+{
+    "var":[
+        "VarID":{
+            ...
+        }
+    ],
+    "Timestamp": 123456
+}
+```
+
+`VarID`是由Server生成的**不可逆向的**A-Z字符串。
+
+
+上面两个JSON结构中的`Timestamp`是当前操作的时间戳，需要上传的时候自定确定。时间戳会用于同步时解决冲突。但在Coly中你无法更改变量的一部分，**所以你只能给`Timestamp`指定固定值或者调用其他语言来修改该`Timestamp`。**
+
+例如（其中123是变量的名字）
+```VariableSync
+get var 123
+```
