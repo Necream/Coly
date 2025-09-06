@@ -613,7 +613,7 @@ int main(int argc, char *argv[]){
         return 1;
     }
     string command="reg process ";
-    command+=GXPass::number2ABC(GXPass::compile(GXPass::c12c2<NetworkSession,string>(session)));
+    command+=GXPass::number2ABC(GXPass::compile(GXPass::c12c2<int,string>(time(0))));
     string echo = send_message(session, command);
     // cout<<echo<<endl;
     if(argc==1){
