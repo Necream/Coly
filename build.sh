@@ -54,7 +54,7 @@ read -p "Do you want to build with g++? (Y/N): " choice
 case "$choice" in
     [Yy]* )
         mkdir -p build
-        g++ Coly.cpp -o build/Coly -I.
+        g++ Coly.cpp -o Coly -std=c++17 -Wall -O2 -pthread -I.
         if [ $? -ne 0 ]; then
             echo -e "\033[31mBuild failed.\033[0m"
             read -p "Do you want to update GXPass and retry? (Y/N): " retry_choice
