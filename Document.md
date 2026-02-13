@@ -1,31 +1,53 @@
-# Coly
+# Coly v0.5.0
 
 This document was edited in **Chinese**.
 
 ---
 
+## 更新的内容
+
+我们本次更新修复了变量同步的bug，已经是可使用阶段。v0.3.0版本的变量同步存在问题，且多个细节存在明显bug。
+没有制作新的安装脚本，你需要在Windows的`C:\`中创建的文件夹按下面描述的所示
+- **C:\\**
+  - **Coly\\**
+    - **Settings\\**
+      - **LanguageMap.json（请手动拷贝）**
+    - **TempCode\\**
+    - **InteractiveColy.cly（如果你不需要可以不拷贝，但是如果你不拷贝这个文件在无命令行启动时会出现错误并且无法启动）**
+    - **VariableSyncService\\**
+      - **server.exe（你可以自己改名，可以开机自启动，但是要求在Coly启动之前必须启动）**
+
+请注意，Coly本次更新采用了MSVC编译工具链，所以`LanguageMap.json`中使用的是`cl.exe`，如果你需要使用`GDB`需要自定更改命令。
+
 ## Coly语言
 
-**请注意，v0.3.0版本需要你手动启动Server之后才能运行Coly**
+**请注意，v0.3.0以及部分更新版本需要你手动启动Server之后才能运行Coly，否则会认为变量服务器不存在，不能运行Coly**
 
-一个**简单易学**的编程语言，支持再一段代码中引用其他编程语言来便利初学者，这样你就可以充分发挥各个编程语言的长处来**节约代码量**。
+Coly是一个**简单易学**的编程语言，支持再一段代码中引用其他编程语言来便利初学者，这样你就可以充分发挥各个编程语言的长处来**节约代码量**。
 Coly采用了语言逻辑而非数学逻辑，使代码可读性更高。但**缺点是代码的编写简易程度降低**。
-**Coly会长期更新**，并且每次更新都会保证一定的兼容性。
-Coly能够在不同的代码段之间**同步变量**来保证你的开发效率。
+**Coly会长期更新**，并且每次更新都会保证**一定的**兼容性。
+Coly能够在不同的代码段之间**同步变量**来保证你的开发效率，因此Coly可以作为软件的Runtime Framework使用。
+Coly只会同步你代码中特定类型且专门为Coly开发的变量，而**Coly代码会全部同步**。
+支持其他语言编写的单独函数的功能还在开发中。
+
+**我们强烈建议您成功通过编译代码块代码之后再放到Coly的代码块中**
 
 ### 特性
 
-- Coly会自动同步你的代码中的全局变量，这依赖对代码进行分析。请注意，你的部分自定义类型的变量不会进行同步，因为我们无法确定你的类型怎样进行同步，除非你手动进行同步。 ~~**在Coly v0..0中不可用**~~ **在Coly v0.3.0中部分可用**
-- 我们会默认支持C++和Python，如果你有其他语言变量同步的需求，请你自行编写同步程序或者在网络上搜索可用的程序。**但请注意，如果你使用来自网络上的程序，我们无法保证你的电脑和代码的安全性。如果你不信任开发者，请你备份好你的代码。**
+- Coly会同步你代码中使用了Coly规定的自动同步的变量类型。使用方式简单，你只需要为Coly的变量赋值即可。如果你需要使用Coly的变量，读取Coly变量即可。
+- 我们会默认支持 **C++** 和 **Python** ，如果你有其他语言变量同步的需求，请你自行编写同步程序或者在网络上搜索可用的程序。**但请注意，如果你使用来自网络上的程序，我们无法保证你的电脑和代码的安全性。如果你不信任开发者，请你备份好你的代码。**
 - ~~**InteractiveColy中的import因为Coly的性能优化不可用！**~~ **在v0.3.0以后，import成为了一条新的指令，你可以在InteractiveColy中使用，且原来的性能优化没有被删除，我们保留了两部分的代码。**
-- 请注意，如果你频繁使用需要编译的语言，你的语言可能**会重新编译**，这个问题会在以后的更新中修复。
+- ~~请注意，如果你频繁使用需要编译的语言，你的语言可能**会重新编译**，这个问题会在以后的更新中修复。~~**在v0.3.0中修复，增加了已编译判定，用于节约时间。请注意，你的代码可能在编译之后被替换，这会在之后的SafeColy中修复。**
+- **SafeColy计划**： SafeColy是Coly的闭源工具，用于将你的代码使用GXPass技术加密存储并只在内存中存在源码，而不是SafeColy是闭源项目。**SafeColy会和Coly一起始终是开源项目。**
+  - SafeColy的技术细节：使用SafeColy工具链输入你的`.cly`脚本，输出一个`.cpp`文件并自动编译。每次你使用SafeColy编译出的文件都会不同，就算是同一个文件，因为SafeColy会使用随机的字符串作为加密解密密码。
+  - SafeColy的应用：作为NCSoft的第一个完善的编译型（解释型内核）的编程语言，SafeColy会被用在GXCC的升级版本中作为GXCC Runtime Framework。
 
 #### 变量同步
 
-- 在v0.3.0之后，Coly中的变量支持同步。在以后的更新中会支持第三方的语言并且允许扩展。
-- 你的SubProcess继承Process的所有变量，且**访问权限与Process相同**。
+- 在v0.3.0之后，Coly中的变量支持同步。在以后的更新中会支持第三方的语言并且允许扩展。如果你现在就需要使用变量同步，你可以在你的C++代码中手动引入Coly库并使用Coly的函数手动同步变量。后续更新不会影响兼容性，但是会导致你的变量发生重复提交。
+- 你的SubProcess继承Process的所有变量，且**访问权限与Process相同**。请注意，如果你在Process中存在未定义的变量但SubProcess中使用了，**就算服务端中存在数据也不能使用**，这是由于Coly的本地缓存机制，且**不会与server保持实时同步**。这个机制既可以缓解访问压力也可以限制变量和代码的作用域，防止Process中的code被SubProcess中的同名code或者var覆盖。
 - 不同的Process之间无法互相访问！
-- 变量同步使用网络。如果你同意的话，你可以**为Server暴露**，这样你可以分享你的IP并于其他人共享数据。
+- 变量同步使用网络。如果你同意的话，你可以**为Server暴露**，这样你可以分享你的IP并与其他人共享数据。
 
 ---
 
@@ -40,8 +62,10 @@ define code named 1 with C++
 |    cout<<"Hello World!"<<endl;
 |    return 0;
 |}
-#请注意，这里的语法与Aug 31, 2024时的文档中有所不同。
-use code 1
+#请注意，这里的语法与Oct 3, 2025时的文档中有所不同。
+use 1
+#无限循环从define所在的行到jump所在的行，下面有讲解。
+jump 1
 ```
 
 ---
@@ -52,22 +76,22 @@ use code 1
 
 #### 注释
 
-Coly注释的语法与Python一致，**但不支持Python的多行注释**，**且**注释必须注释一整行，且`#`**必须位于行首**且**之前不能存在空格**。
+Coly注释的语法与Python大体一致，**但不支持Python的多行注释**，**且**注释必须注释一整行，且`#`**必须位于行首**且**之前不能存在空格**。
 #### define
 
 `define`能够让你定义一定的内容，可以是`code`或者`var`，并且存储在你指定名字的变量中。`define`允许你重复定义，但是**重复定义的内容会以新内容存储**。
 在上面给出的`示例 1`中，定义了一个代码块名为1，使用C++编程语言，继承上文中使用的所有全局变量。
-**你为变量起名时无需注意任何内容，非英文，emoji均可，无空格即可，因为Coly会依照空格区分内容。请注意，你的变量名不能以其他变量的内容明明，`$`会被识别成变量名字的一部分。**
-在`define`的内容中，你需要在每一行前加上`|`来区分内容。**请注意，你必须加在行首，这里Coly不会自动忽略你的空格。**
+**你为变量起名时无需注意任何内容，非英文，emoji均可，无空格即可，因为Coly会依照空格区分内容。`$`会被识别成变量名字的一部分。**
+在`define code`的内容中，你需要在每一行前加上`|`来区分内容。**请注意，你必须加在行首，这里Coly不会自动忽略你的空格。**
 
 #### use
 
-`use`能够让你使用一定的`code`，使用时如`示例 1`所示。
+`use`能够让你使用`code`，使用时如`示例 1`所示。
 **`use`会保持当前Coly的读取进度继续运行。**
 
 #### jump
 
-`jump`能够让你使用一定的`code`，使用时如`示例 1`所示。
+`jump`能够让你使用`code`、`position`，使用时如`示例 1`所示。
 **`jump`会使Coly跳跃到定义处继续运行。**
 
 #### 调用变量
@@ -76,7 +100,7 @@ Coly注释的语法与Python一致，**但不支持Python的多行注释**，**�
 **请注意Coly没有其他语言标准意义上的变量，如果需要变量处理建议引用其他语言。Coly中的变量均以string存储，不支持任何运算。**
 **在代码块之间进行变量同步时，不会导致变量类型改变。**
 
-#### 变量代码化 *在Coly v0.3.0中暂不支持*
+#### 变量代码化
 
 这个功能使你能够编写**与JIT有关的内容**，你可以把代码存储在变量中，然后使用`define code named codename with $LanguageType | $CodeInfo`来使变量代码化，之后你就可以通过`use code codename`来调用你的代码。**请注意，变量代码化对应的代码必须写在同一行内。**
 
@@ -96,6 +120,26 @@ print Hello, World!
 ```
 `print`会以空格分别内容，但不会使文章中的空格减少。在你调用完一个变量后，你需要使用空格来说明变量名已经结束。
 如果你使用`print`，它会在输出玩内容后自动换行。
+例如
+```
+>  ./coly.exe         
+Welcome to Coly! 
+
+If you are seeing this message, it means you are currently using InteractiveColy.
+InteractiveColy relies on line-by-line Coly interaction, therefore the define code feature is not available in this mode.  
+
+If you need to use that feature, please edit your code in a file and then import the library into InteractiveColy.
+
+For more information about Coly - including syntax and available features - please refer to the Coly documentation.        
+-----------------------------------
+>>>define var named 1 with 1
+>>>define var named 2 with 2
+>>>print $1 $2
+12
+>>>print $1  $2
+1 2
+>>>
+```
 
 #### printwithoutanewline
 
@@ -104,6 +148,7 @@ print Hello, World!
 #### do
 
 `do`允许你直接在当前环境下将变量代码化并立即执行，可用于编写交互性的Coly程序。
+`do`依赖于创建一个新的Coly处理线，并且单行执行，所执行的代码赋予的`fake_lineid`为`-1`，所以你无法定位处理的内容，也无法在InteractiveColy中写循环。
 
 #### 功能变量
 
@@ -133,11 +178,11 @@ define var named NULL with $InputLine
 #### if ifn
 
 `if`和`ifn`是**新增内容**。
-`if`和`ifn`能够在Coly中判断两个变量是否相等。如果相等，`if`会执行后方的code，`ifn`则不会，若不相等则反之。
+`if`和`ifn`能够在Coly中判断两个变量是否相等。如果相等，`if`会执行后方的code，`ifn`则不会.若不相等则反之。
 **请注意，`type`分别为`code`和`var`的变量不影响比较。**
 用法
 ```coly
-if $var1 $var2 codename/placename
+if $var1 $var2 code/position
 ```
 
 #### 库文件
@@ -210,6 +255,7 @@ get process
 ```
 
 `VarID`是由Server生成的**不可逆向的**A-Z字符串。
+- 注：Server使用`GXPass::num2ABC(GXPass::compile(data))`生成字符串，这种方法没有任何安全性，仅用于生成唯一识别码。在GXPass库中要求的指定版本否则会损失数据的提示并不会起作用，不用担心Coly的数据损失问题，因为Coly在下次更新时你需要关闭Coly，届时没有任何数据保存。
 
 
 上面两个JSON结构中的`Timestamp`是当前操作的时间戳，需要上传的时候自定确定。时间戳会用于同步时解决冲突。但在Coly中你无法更改变量的一部分，**所以你只能给`Timestamp`指定固定值或者调用其他语言来修改该`Timestamp`。**

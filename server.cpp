@@ -71,6 +71,7 @@ struct ServerSession : enable_shared_from_this<ServerSession>{
                     cout<<msg<<endl;
 
                     send_message(CommandExecutor(msg,self));
+                    // cout<<memory_container.to_json().dump(4)<<endl; // 输出当前内存状态
 
                     // 继续读取
                     read_message();
@@ -104,6 +105,7 @@ struct ServerSession : enable_shared_from_this<ServerSession>{
                     proof_map.erase(subpid); // 删除子进程凭证
                 }
                 subprocess_map.erase(session_map[client]); // 删除子进程映射
+                return;
             }
             memory_container.process_container.erase(session_map[client]); // 删除进程容器
             cout<<"Session(ProcessID:"<<session_map[client]<<") closed and resources cleaned up."<<endl;
@@ -171,7 +173,14 @@ string CommandExecutor(string command,shared_ptr<ServerSession> client){
     }
     if(operation_id==11){ // set process
         string processid=session_map[client]; // 获取会话对应的进程ID
-        json j = json::parse(command);
+        json j;
+        try{
+            j = json::parse(command);
+        }
+        catch(const json::parse_error& e){
+            cout<<"[ERROR]Failed to parse JSON: "<<e.what()<<endl;
+            return "[ERROR]Failed to parse JSON: "+string(e.what());
+        }
         ProcessContainer pc;
         pc.from_json(j);  // 使用 from_json 替代赋值
         memory_container.process_container[processid] = pc;
@@ -180,7 +189,14 @@ string CommandExecutor(string command,shared_ptr<ServerSession> client){
     }
     if(operation_id==12){ // set var
         string processid=session_map[client]; // 获取会话对应的进程ID
-        json j = json::parse(command);
+        json j;
+        try{
+            j = json::parse(command);
+        }
+        catch(const json::parse_error& e){
+            cout<<"[ERROR]Failed to parse JSON: "<<e.what()<<endl;
+            return "[ERROR]Failed to parse JSON: "+string(e.what());
+        }
         string varid=GXPass::number2ABC(GXPass::compile(j["Name"]));
         VarContainer v;
         v.from_json(j);  // 使用 from_json 替代赋值
@@ -255,7 +271,14 @@ string CommandExecutor(string command,shared_ptr<ServerSession> client){
             session_map.erase(client); // 注销会话
             return "[ERROR]Process not found.You can register now.";
         }
-        json j = json::parse(command);
+        json j;
+        try{
+            j = json::parse(command);
+        }
+        catch(const json::parse_error& e){
+            cout<<"[ERROR]Failed to parse JSON: "<<e.what()<<endl;
+            return "[ERROR]Failed to parse JSON: "+string(e.what());
+        }
         ProcessContainer new_pc;
         new_pc.from_json(j);  // 使用 from_json 替代赋值
         memory_container.process_container[processid].Sync(new_pc);
@@ -269,7 +292,14 @@ string CommandExecutor(string command,shared_ptr<ServerSession> client){
             session_map.erase(client); // 注销会话
             return "[ERROR]Process not found.You can register now.";
         }
-        json j = json::parse(command);
+        json j;
+        try{
+            j = json::parse(command);
+        }
+        catch(const json::parse_error& e){
+            cout<<"[ERROR]Failed to parse JSON: "<<e.what()<<endl;
+            return "[ERROR]Failed to parse JSON: "+string(e.what());
+        }
         string varid=GXPass::number2ABC(GXPass::compile(j["Name"]));
         if(memory_container.process_container[processid].Vars.find(varid)==memory_container.process_container[processid].Vars.end()){
             cout<<"[ERROR]Var not found"<<endl;
@@ -308,7 +338,8 @@ string CommandExecutor(string command,shared_ptr<ServerSession> client){
             proof_map[subprocessid] = session_map[client]; // 初始化子进程凭证
             subprocess_map[session_map[client]].push_back(subprocessid); // 记录子进程ID
         }else{
-            cout<<"[ERROR]Parent process not found, please register parent process first."<<endl;
+            cout<<"[ERROR]Subprocess("<<subprocessid<<") already exists for this parent process."<<endl;
+            return "[ERROR]Subprocess(" + subprocessid + ") already exists for this parent process.";
         }
         cout<<proof_map[subprocessid]<<endl;
         cout<<"Subprocess registered."<<endl;

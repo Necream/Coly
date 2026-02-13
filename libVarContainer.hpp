@@ -12,7 +12,7 @@ using json = nlohmann::json;
 struct VarContainer{
     string Name;
     string Value;
-    int Timestamp;
+    long long Timestamp;
 
     // 同步方法
     void Sync(VarContainer& other) {
@@ -43,7 +43,7 @@ struct VarContainer{
 // 进程容器结构体
 struct ProcessContainer {
     map<string, VarContainer> Vars;
-    int Timestamp;
+    long long Timestamp;
 
     // 同步方法
     void Sync(ProcessContainer& other) {
@@ -84,7 +84,7 @@ struct ProcessContainer {
 // 内存容器结构体
 struct MemoryContainer {
     map<string, ProcessContainer> process_container;
-    int Timestamp;
+    long long Timestamp;
 
     // 同步方法
     void Sync(MemoryContainer& other) {

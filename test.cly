@@ -1,2 +1,10 @@
-import lib D:\UDisk\Codes\ColyForWindows\teslib.cly
-use start_py
+#请注意，这里的语法与Aug 31, 2024时的文档中有所不同。
+define code named 1 with C++
+|#include <iostream>
+|using namespace std;
+|int main(int argc,char* argv[]){
+|    cout<<"Hello World!"<<endl;
+|    return 0;
+|}
+#请注意，这里的语法与Aug 31, 2024时的文档中有所不同。
+use 1

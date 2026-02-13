@@ -1,8 +1,11 @@
 define var named Input
-define var named InputLine
-define code named start_py with C++
-|#include <cstdlib>
-|int main(){
-|    system("py");
-|    return 0;
-|}
+define code named 2
+define var named 3
+define code named 1 with Coly
+|define code named 2 with Coly
+||define var named 3 with 4
+||print ok
+|print --
+|use 2
+use 1
+print $3

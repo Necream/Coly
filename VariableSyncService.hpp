@@ -60,7 +60,7 @@ void close_connection(NetworkSession& session) {
     if (session.ec) {
         std::cerr << "Close failed: " << session.ec.message() << "\n";
     } else {
-        std::cout << "Connection closed\n";
+        // std::cout << "Connection closed\n";
     }
 }
 

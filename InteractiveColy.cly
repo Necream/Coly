@@ -1,6 +1,12 @@
-print Coly v0.1.0
-print Hello! Here is InteractiveColy!
-print You can use import here, see the document to learn more.
+print Welcome to Coly!
+print
+print If you are seeing this message, it means you are currently using InteractiveColy.
+print InteractiveColy relies on line-by-line Coly interaction, therefore the define code feature is not available in this mode.
+print
+print If you need to use that feature, please edit your code in a file and then import the library into InteractiveColy.
+print
+print For more information about Coly - including syntax and available features - please refer to the Coly documentation.
+print -----------------------------------
 define var named InputLine
 define position named for
 printwithoutanewline >>>
