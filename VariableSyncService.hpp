@@ -50,7 +50,6 @@ std::string send_message(NetworkSession& session, const std::string& msg) {
         std::cerr << "Receive failed: " << session.ec.message() << "\n";
         return "";
     }
-
     return std::string(buf, n);
 }
 

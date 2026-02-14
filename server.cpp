@@ -68,7 +68,7 @@ struct ServerSession : enable_shared_from_this<ServerSession>{
             [this, self](error_code ec, size_t length) {
                 if (!ec) {
                     string msg(read_buf, length);
-                    cout<<msg<<endl;
+                    cout<<"Received message: "<<msg<<endl;
 
                     send_message(CommandExecutor(msg,self));
                     // cout<<memory_container.to_json().dump(4)<<endl; // 输出当前内存状态
@@ -302,8 +302,8 @@ string CommandExecutor(string command,shared_ptr<ServerSession> client){
         }
         string varid=GXPass::number2ABC(GXPass::compile(j["Name"]));
         if(memory_container.process_container[processid].Vars.find(varid)==memory_container.process_container[processid].Vars.end()){
-            cout<<"[ERROR]Var not found"<<endl;
-            return "[ERROR]Var not found";
+            cout<<"Var not found, created new var and set value"<<endl;
+            return CommandExecutor("set var "+command,client); // 如果变量不存在则创建
         }
         VarContainer new_var;
         new_var.from_json(j);  // 使用 from_json 替代赋值
@@ -311,7 +311,6 @@ string CommandExecutor(string command,shared_ptr<ServerSession> client){
         cout<<"Var sync completed"<<endl;
         return "Var sync completed";
     }
-    //TODO:
     if(operation_id==51){ // reg process   This will auto login process
         string processid=GXPass::number2ABC(GXPass::compile(command));
         if(session_map.find(client) != session_map.end()){

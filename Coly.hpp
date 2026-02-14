@@ -20,6 +20,11 @@ using JSON = nlohmann::json;
 // Map to store the line number of defined variables, codes and positions
 // This is used to check if a variable or code is defined before use
 std::map<std::string, int> definedline;
+// Get the prefix of a std::string with a specified length
+std::string prefix(std::string str,int len){
+    if(str.length() < len) return str;
+    return str.substr(0, len);
+}
 // The following operations are supported in Coly
 // define: define a variable or code or position
 // use: use a  code
@@ -82,6 +87,10 @@ struct defineinfo {
             if(str==this->name) skip=1;
         }
         if(!skip) echo=send_message(session,commit_command);
+        if(prefix(echo, 7) == "[ERROR]"){
+            std::cout << echo << std::endl;
+            return echo;
+        }
         JSON j;
         if(!skip) j=JSON::parse(echo);
         if(type == "var") {
@@ -110,11 +119,6 @@ std::map<std::string, int> definedposition;
 std::map<std::string, defineinfo> definedvar;
 // Map to store compiled codes
 std::map<std::string, bool> compiledcode;
-// Get the prefix of a std::string with a specified length
-std::string prefix(std::string str,int len){
-    if(str.length() < len) return str;
-    return str.substr(0, len);
-}
 // Judge the type of a define operation, register the variable or code and return the defineinfo
 defineinfo judgedefine(std::string content, NetworkSession& session){
     //0: type 1: named 2: with 3: codeinfo/varinfo 4:vartype 5:| 6: codevar
@@ -296,7 +300,11 @@ void usedefine(std::string content, NetworkSession& session){
     while(pos != std::string::npos) command.replace(pos, 1, codename),pos = command.find('*');
     std::string regcommand = "reg subprocess ";
     regcommand += codename;
-    send_message(session, regcommand);
+    std::string echo = send_message(session, regcommand);
+    if(prefix(echo, 7) == "[ERROR]"){
+        std::cout << echo << std::endl;
+        return;
+    }
     if(command.empty()){
         std::cout << "Error: No run command defined for language: " << info.language << std::endl;
         return;
@@ -339,9 +347,9 @@ std::string definevarcommand(defineinfo info, NetworkSession& session){
     JSON j = {
         {"Name", info.name},
         {"Value", info.type == "code" ? info.codeinfo : info.content},
-        {"TimeStamp", GXPass::c12c2<int,std::string>(time(0))}
+        {"Timestamp", time(0)}
     };
-    command = "set var " + j.dump();
+    command = "sync var " + j.dump();
     // std::co<<command<<std::endl;
     return command;
 }
@@ -520,8 +528,9 @@ void addressline(std::string line,int *lineid, NetworkSession& session){
             } else if(operationlist[i] == "commitvaroperation"){
                 definedoperation=1;
                 std::string echo = send_message(session, content);
-                if(echo.substr(0,sizeof("[ERROR]")-1)=="[ERROR]"){
-                    std::cout<<echo<<std::endl;
+                if(prefix(echo, 7) == "[ERROR]"){
+                    std::cout << echo << std::endl;
+                    return;
                 }
                 break;
             }
@@ -533,7 +542,7 @@ void addressline(std::string line,int *lineid, NetworkSession& session){
         if(!commit_command.empty()){
             std::string echo=send_message(session, commit_command);
             // std::co<<echo<<std::endl;
-            if(echo.substr(0,sizeof("[ERROR]"))=="[ERROR]"){
+            if(prefix(echo, 7) == "[ERROR]"){
                 std::cout<<echo<<std::endl;
             }
         }
