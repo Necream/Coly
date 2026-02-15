@@ -32,8 +32,8 @@ int main(int argc, char *argv[]){
         useCly(readCly("C:\\Coly\\InteractiveColy.cly"),session);
     }
     if(argc==2){
-        // useCly(readCly(argv[1]),session);
-        useCly(readCly("test.cly"),session);
+        useCly(readCly(argv[1]),session);
+        // useCly(readCly("test.cly"),session);
     }
     close_connection(session);
     return 0;

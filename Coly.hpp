@@ -294,8 +294,9 @@ void usedefine(std::string content, NetworkSession& session){
     size_t pos = command.find('$');
     while(pos != std::string::npos)command.replace(pos, 1, filename),pos = command.find('$');
     pos = command.find('^');
+    std::string outputfilepath = filename.substr(0, filename.find_last_of('.'));
     compiledcode[codename] = true; // Mark the code as compiled
-    while(pos != std::string::npos) command.replace(pos, 1, codename),pos = command.find('^');
+    while(pos != std::string::npos) command.replace(pos, 1, outputfilepath),pos = command.find('^');
     pos = command.find('*');
     while(pos != std::string::npos) command.replace(pos, 1, codename),pos = command.find('*');
     std::string regcommand = "reg subprocess ";

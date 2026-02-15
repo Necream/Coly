@@ -1,4 +1,4 @@
-# Coly v0.5.0
+# Coly v1.0.0
 
 This document was edited in **Chinese**.
 
@@ -16,8 +16,16 @@ This document was edited in **Chinese**.
     - **InteractiveColy.cly（如果你不需要可以不拷贝，但是如果你不拷贝这个文件在无命令行启动时会出现错误并且无法启动）**
     - **VariableSyncService\\**
       - **server.exe（你可以自己改名，可以开机自启动，但是要求在Coly启动之前必须启动）**
+    - **VariableSyncLib\\（存储了你编写C++代码块时需要用的库，采用了标准的ColyVariableSyncService接口，使用时include "ColyCppSync.hpp"）**
+      - **GXPass.hpp**
+      - **json.hpp**
+      - **GXPass.hpp**
+      - **NCInt.hpp**
+      - **asio.hpp**
+      - **asio\\**
 
 请注意，Coly本次更新采用了MSVC编译工具链，所以`LanguageMap.json`中使用的是`cl.exe`，如果你需要使用`GDB`需要自定更改命令。
+请注意，`VariableSyncServer`不会加密你的数据。所以如果有数据保护的需求请更改代码删掉所有的输出，不影响Client的功能。
 
 ## Coly语言
 
@@ -264,3 +272,27 @@ get process
 ```VariableSync
 get var 123
 ```
+
+## C++语言
+
+我们在v1.0.0版本中更新了针对于C++写出的运行库，你一共需要明白下面的两个宏、一个函数和一个类型。
+
+### InitColySyncService();
+
+这个宏需要被引入到main函数的第一行，会自动判定主进程的`ColyProcessID`，需要你引入argc和argv。如果启动环境不满足代码块的要求，会自动退出。
+你也可以把`InitColySyncService()`代码粘贴到你的主函数进行自定义操作。
+**请注意不要更改库文件以免引起兼容性问题**
+
+### RegColyVar(varname);
+
+这个函数可以让你定义一个`std::string`类型的变量，并且具有基本的`std::string`的操作。如果你发现有些操作没有被定义，你可以自行使用`varname.data.(std::string的操作)`，然后进行变量同步。其余情况下本类型可以和`std::string`混用。
+
+## ColySyncString
+
+这是`ColyCppSyncLib`的自动同步的`std::string`类型的变量，包含了Coly主进程仅支持的`string`类型。
+如果你要进行同步操作，请先给`ColySyncString`初始化和赋值，赋值直接使用赋值语句即可，适配`std::string`和`char*`
+
+## sync_variable(*varname);
+
+该函数可以自动同步你的变量到**ColySyncServer**。
+传入的参数是`ColySyncString`类型的变量指针。

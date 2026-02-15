@@ -17,7 +17,7 @@ struct VarContainer{
 
     // 同步方法
     void Sync(VarContainer& other) {
-        if (other.Timestamp > Timestamp) {
+        if (other.Timestamp >= Timestamp) {
             *this = other;
         } else {
             other = *this;
@@ -48,7 +48,7 @@ struct ProcessContainer {
 
     // 同步方法
     void Sync(ProcessContainer& other) {
-        if (other.Timestamp > Timestamp) {
+        if (other.Timestamp >= Timestamp) {
             *this = other;
         } else {
             other = *this;
@@ -89,7 +89,7 @@ struct MemoryContainer {
 
     // 同步方法
     void Sync(MemoryContainer& other) {
-        if (other.Timestamp > Timestamp) {
+        if (other.Timestamp >= Timestamp) {
             *this = other;
         } else {
             other = *this;

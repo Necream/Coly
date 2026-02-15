@@ -1,0 +1,16 @@
+define var named Input
+define var named TestVar with 1234
+print $TestVar
+define code named testcpp1 with C++
+|#include "D:\\UDisk\\Codes\\Coly\\LanguageSyncLib\\ColyCppSync.hpp"
+|#include <iostream>
+|#include <string>
+|using namespace std;
+|int main(int argc,char* argv[]){
+|    InitColySyncService();
+|    RegColyVar(TestVar);
+|    TestVar="1234567890";
+|    return 0;
+|}
+use testcpp1
+print $TestVar
