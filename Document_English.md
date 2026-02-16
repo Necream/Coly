@@ -321,18 +321,18 @@ If `NoReg` is defined (and its value is `true`) in Coly or elsewhere, your progr
 This function allows you to define a variable of type `std::string` with basic `std::string` operations. If you find some operations are undefined, you can manually use `varname.data.(std::string operation)` and then synchronize the variable. In other cases, this type can be mixed with `std::string`.
 **Please note that after registration, existing data on the Server will be overwritten!**
 
-## ColySyncString
+### ColySyncString
 
 This is a variable of type `std::string` with automatic synchronization in the `ColyCppSyncLib`, supporting only the `string` type of the Coly main process.
 If you want to perform synchronization operations, initialize and assign a value to `ColySyncString` first (assignment can be done directly using an assignment statement, compatible with `std::string` and `char*`).
 Manual use is not recommended.
 
-## sync_variable(*varname);
+### sync_variable(*varname);
 
 This function can automatically synchronize your variables to the **ColySyncServer**.
 The parameter passed is a pointer to a variable of type `ColySyncString`.
 Manual use is not recommended.
 
-## ReadColyVar(varname)
+### ReadColyVar(varname)
 
 Allows you to read data from the Server in read-only mode, after which you can perform string operations using `varname`. You can implicitly convert it to `std::string` and then assign it to `ColyVariable`, which can make up for the defects of `RegColyVar()`.

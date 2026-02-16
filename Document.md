@@ -309,18 +309,18 @@ get var 123
 这个函数可以让你定义一个`std::string`类型的变量，并且具有基本的`std::string`的操作。如果你发现有些操作没有被定义，你可以自行使用`varname.data.(std::string的操作)`，然后进行变量同步。其余情况下本类型可以和`std::string`混用。
 **请注意，在注册之后，原先存在于Server上的数据会被覆盖！**
 
-## ColySyncString
+### ColySyncString
 
 这是`ColyCppSyncLib`的自动同步的`std::string`类型的变量，包含了Coly主进程仅支持的`string`类型。
 如果你要进行同步操作，请先给`ColySyncString`初始化和赋值，赋值直接使用赋值语句即可，适配`std::string`和`char*`。
 不建议手动使用。
 
-## sync_variable(*varname);
+### sync_variable(*varname);
 
 该函数可以自动同步你的变量到**ColySyncServer**。
 传入的参数是`ColySyncString`类型的变量指针。
 不建议手动使用。
 
-## ReadColyVar(varname)
+### ReadColyVar(varname)
 
 可以允许你从Server中以只读方式读取数据，之后你可以使用`varname`进行字符串操作。你可以通过隐式转换为`std::string`，之后可以赋值给`ColyVariable`，可以弥补`RegColyVar()`的缺陷。
