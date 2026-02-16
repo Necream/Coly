@@ -1,0 +1,4 @@
+define code named 1 with Coly
+|define var named 2 with 2
+use 1
+print $2

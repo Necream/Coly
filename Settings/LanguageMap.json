@@ -2,17 +2,18 @@
     "C++": {
         "needcompile": true,
         "extension": "cpp",
-        "compilerun": "cl /std:c++20 /utf-8 /EHsc $ && ^.exe",
-        "run": "^.exe"
+        "compilerun": "cl /nologo /std:c++20 /utf-8 /EHsc $ /Fe:^.exe > nul && ^.exe * && echo 1",
+        "compile": "cl /nologo /std:c++20 /utf-8 /EHsc $ /Fe:^.exe > nul",
+        "run": "^.exe *"
     },
     "Python": {
         "needcompile": false,
         "extension": "py",
-        "run": "py $"
+        "run": "py $ *"
     },
     "Coly": {
         "needcompile": false,
         "extension": "cly",
-        "run": "coly $"
+        "run": "D:\\UDisk\\Codes\\Coly\\Coly.exe $ *"
     }
 }

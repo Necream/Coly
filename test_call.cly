@@ -1,0 +1,44 @@
+define code named testcall_target with C++
+|#include <iostream>
+|#include "D:\\UDisk\\Codes\\Coly\\LanguageSyncLib\\ColyCppSync.hpp"
+|using namespace std;
+|int main(int argc, char* argv[]){
+|    InitColySyncService();
+|    cout<<"Call Success."<<endl;
+|    RegColyVar(CallSign);
+|    CallSign="No";
+|    return 0;
+|}
+define code named teatcall_server with C++
+|#include <iostream>
+|#include "D:\\UDisk\\Codes\\Coly\\LanguageSyncLib\\ColyCppSync.hpp"
+|#include <Windows.h>
+|using namespace std;
+|int main(int argc, char* argv[]){
+|    InitColySyncService();
+|    for(;;){
+|        RegColyVar(CallSign);
+|        CallSign="Yes";
+|        Sleep(10000);
+|    }
+|    return 0;
+|}
+define code named wait with C++
+|#include <Windows.h>
+|int main(){Sleep(100);}
+print Initialzing...
+define var named OnlyCompile with true
+use testcall_target
+use teatcall_server
+use wait
+define var named OnlyCompile with false
+print ---------------
+define var named CallSign
+usewithoutwait teatcall_server
+define var named oksign with Yes
+define position named for
+define var named NoReg with true
+use wait
+define var named NoReg with false
+if $CallSign $oksign use testcall_target
+jump for

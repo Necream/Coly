@@ -34,7 +34,7 @@ vector<Operation> operations;
 MemoryContainer memory_container; // 全局内存容器
 map<string,string> proof_map; // 用于存储进程的登录凭证
 map<shared_ptr<ServerSession>,string> session_map; // 用于存储会话与进程ID的映射
-map<string,vector<string>> subprocess_map; // 用于存储进程与其子进程ID的映射
+map<string,map<string,string>> subprocess_map; // 用于存储进程与其子进程ID的映射
 void OperationInit(){
     operations.push_back({"set",1});
     operations.push_back({"get",2});
@@ -96,21 +96,55 @@ struct ServerSession : enable_shared_from_this<ServerSession>{
 
     // 关闭连接
     void close(shared_ptr<ServerSession> client) {
-        if(session_map.find(client)!=session_map.end()){
-            clients.erase(shared_from_this());
-            socket.close();
-            // 删除该会话对应的子进程映射
-            if(subprocess_map.find(session_map[client]) != subprocess_map.end()){
-                for(const string& subpid:subprocess_map[session_map[client]]){
-                    proof_map.erase(subpid); // 删除子进程凭证
-                }
-                subprocess_map.erase(session_map[client]); // 删除子进程映射
-                return;
-            }
-            memory_container.process_container.erase(session_map[client]); // 删除进程容器
-            cout<<"Session(ProcessID:"<<session_map[client]<<") closed and resources cleaned up."<<endl;
-            session_map.erase(client); // 从会话映射中删除
+        // 第一步：先关socket、从clients移除（必做，防泄漏）
+        socket.close();
+        clients.erase(shared_from_this());
+
+        // 未登录的客户端：直接结束，无资源要清
+        if(session_map.find(client) == session_map.end()) {
+            cout << "Unregistered client disconnected\n";
+            return;
         }
+
+        // 核心：先拿到当前会话关联的ID（父进程ID/子进程关联的父ID）
+        string related_process_id = session_map[client];
+        bool is_subprocess = false;
+
+        // 第二步：判断当前会话是不是子进程
+        // 遍历所有父进程的子进程映射，看是否包含当前会话关联的ID
+        for(const auto& [parent_id, sub_map] : subprocess_map) {
+            if(parent_id == related_process_id) {
+                is_subprocess = true;
+                break;
+            }
+        }
+
+        // 情况1：子进程退出 → 只清子进程临时资源，不清父进程核心资源
+        if(is_subprocess) {
+            // 清子进程凭证和映射
+            for(auto& [sub_id, val] : subprocess_map[related_process_id]) {
+                proof_map.erase(sub_id);
+            }
+            subprocess_map.erase(related_process_id);
+            // 只清会话映射（防泄漏），不清父进程的process_container！
+            session_map.erase(client);
+            cout << "Subprocess disconnected, parent process(" << related_process_id << ") remains available\n";
+            return;
+        }
+
+        // 情况2：父进程退出 → 清所有关联资源（包括子进程+核心资源）
+        // 先清父进程下的所有子进程
+        if(subprocess_map.find(related_process_id) != subprocess_map.end()) {
+            for(const auto& [sub_id, val] : subprocess_map[related_process_id]) {
+                proof_map.erase(sub_id);
+            }
+            subprocess_map.erase(related_process_id);
+        }
+        // 再清父进程核心资源
+        memory_container.process_container.erase(related_process_id);
+        // 最后清会话映射
+        session_map.erase(client);
+        cout << "Parent process(" << related_process_id << ") disconnected, all resources cleaned up\n";
     }
 };
 
@@ -240,8 +274,8 @@ string CommandExecutor(string command,shared_ptr<ServerSession> client){
         session_map.erase(client); // 注销会话
         // 删除该会话对应的子进程映射
         if(subprocess_map.find(processid) != subprocess_map.end()){
-            for(const string& subpid:subprocess_map[processid]){
-                proof_map.erase(subpid); // 删除子进程凭证
+            for(const auto& subpid:subprocess_map[processid]){
+                proof_map.erase(subpid.first); // 删除子进程凭证
             }
             subprocess_map.erase(processid); // 删除子进程映射
         }
@@ -333,9 +367,9 @@ string CommandExecutor(string command,shared_ptr<ServerSession> client){
             cout<<"[ERROR]Subprocess already exists, please use a different subprocess ID."<<endl;
             return "[ERROR]Subprocess already exists, please use a different subprocess ID.";
         }
-        if(subprocess_map.find(session_map[client]) == subprocess_map.end()){
+        if(subprocess_map[session_map[client]].find(subprocessid) == subprocess_map[session_map[client]].end()){
             proof_map[subprocessid] = session_map[client]; // 初始化子进程凭证
-            subprocess_map[session_map[client]].push_back(subprocessid); // 记录子进程ID
+            subprocess_map[session_map[client]][subprocessid] = "1"; // 记录子进程ID
         }else{
             cout<<"[ERROR]Subprocess("<<subprocessid<<") already exists for this parent process."<<endl;
             return "[ERROR]Subprocess(" + subprocessid + ") already exists for this parent process.";

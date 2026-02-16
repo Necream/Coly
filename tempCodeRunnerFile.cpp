@@ -1,9 +1,3 @@
-#include ".\\LanguageSyncLib\\ColyCppSync.hpp"
-#include <iostream>
-#include <string>
-using namespace std;
-int main(){
-    RegColyVar(TestVar);
-    TestVar="1234567890";
-    return 0;
-}
+#include <Windows.h>
+#include "D:\\UDisk\\Codes\\Coly\\LanguageSyncLib\\ColyCppSync.hpp"
+int main(){InitColySyncService();Sleep(1000);return 0;}

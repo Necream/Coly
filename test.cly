@@ -1,10 +1,17 @@
 #请注意，这里的语法与Aug 31, 2024时的文档中有所不同。
 define code named 1 with C++
 |#include <iostream>
+|#include "D:\\UDisk\\Codes\\Coly\\LanguageSyncLib\\ColyCppSync.hpp"
 |using namespace std;
 |int main(int argc,char* argv[]){
+|    InitColySyncService();
+|    RegColyVar(CodeInfo);
+|    RegColyVar(LanguageType);
+|    CodeInfo="print(1)";
+|    LanguageType="Python";
 |    cout<<"Hello World!"<<endl;
 |    return 0;
 |}
-#请注意，这里的语法与Aug 31, 2024时的文档中有所不同。
 use 1
+define code named codename with $LanguageType | $CodeInfo
+use codename

@@ -1,0 +1,47 @@
+define code named 1 with C++
+|#include <iostream>
+|#include <string>
+|#include "D:\\UDisk\\Codes\\Coly\\LanguageSyncLib\\ColyCppSync.hpp"
+|#include <Windows.h>
+|using namespace std;
+|int main(int argc, char* argv[]){
+|    InitColySyncService();
+|    RegColyVar(test);
+|    for(int i=0;i<=9;i++){
+|        string temp="";
+|        temp+=i+'0';
+|        test+=temp;
+|        temp=test;
+|        cout<<temp<<endl;
+|        Sleep(500);
+|    }
+|    return 0;
+|}
+define code named 2 with C++
+|#define WIN32_LEAN_AND_MEAN
+|#include <Windows.h>
+|#include <string>
+|#include "D:\\UDisk\\Codes\\Coly\\GXPass.hpp"
+|#include "D:\\UDisk\\Codes\\Coly\\LanguageSyncLib\\ColyCppSync.hpp"
+|int main(int argc,char* argv[]){
+|    InitColySyncService();
+|    ReadColyVar(WaitTime);
+|    Sleep(GXPass::c12c2<std::string,int>(WaitTime));
+|    return 0;
+|}
+define code named 3 with Python
+|print(1)
+define var named OnlyCompile with true
+print Initializing...
+use 1
+use 3
+use 2
+define var named OnlyCompile with false
+print ------------
+print Stage 1
+usewithoutwait 1
+print start code 1
+print Stage 2
+define var named WaitTime with 2000
+use 2
+print Stage 3

@@ -1,0 +1,27 @@
+define code named process with C++
+|#include "D:\\UDisk\\Codes\\Coly\\LanguageSyncLib\\ColyCppSync.hpp"
+|#include <Windows.h>
+|int main(int argc,char* argv[]){
+|    InitColySyncService();
+|    Sleep(10000);
+|    RegColyVar(ExitColy);
+|    ExitColy="True";
+|    return 0;
+|}
+define code named wait with C++
+|#include "D:\\UDisk\\Codes\\Coly\\LanguageSyncLib\\ColyCppSync.hpp"
+|#include <Windows.h>
+|int main(int argc,char* argv[]){InitColySyncService();Sleep(1000);return 0;}
+define var named OnlyCompile with true
+print Initializing...
+use process
+use wait
+define var named OnlyCompile with false
+print -------------
+define var named ExitColy with NULL
+define var named ExitColy_Sign with True
+usewithoutwait process
+define position named for
+use wait
+if $ExitColy $ExitColy_Sign exit
+jump for

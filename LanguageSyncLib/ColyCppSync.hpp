@@ -1,7 +1,7 @@
-// TODO:Unfinished
 #ifndef COLY_CPP_SYNC_HPP
 #define COLY_CPP_SYNC_HPP
 
+#define WIN32_LEAN_AND_MEAN
 #include <string>
 #include "./VariableSyncService.hpp"
 #include "./json.hpp"
@@ -18,8 +18,28 @@ static std::string ColyProcessID="";
 static std::string RegEcho;
 
 struct ColySyncString;
-static std::string sync_variable(const ColySyncString* var);
-
+std::string sync_variable(const ColySyncString* var);
+std::string get_variable(const std::string& varname) {
+    if (!is_connected) {
+        return "[ERROR] Not connected to server.";
+    }
+    std::string command = "get var " + varname;
+    std::string echo = send_message(*session, command);
+    return echo;
+}
+// READ ONLY, for variables that are only updated by the server
+struct ColyGetString{
+    std::string data;
+    std::string varname;
+    operator std::string() const {
+        return data;
+    }
+    ColyGetString(const std::string& varname){
+        JSON j = JSON::parse(get_variable(varname));
+        this->varname = varname;
+        this->data = j["Value"];
+    };
+};
 struct ColySyncString{
     std::string data;
     std::string varname;
@@ -43,13 +63,21 @@ struct ColySyncString{
         sync_variable(this);
         return *this;
     }
-    ColySyncString operator+(const ColySyncString& other) const {
-        return ColySyncString(data + other.data);
+    std::string operator+(const ColySyncString& other) const {
+        return std::string(data + other.data);
     }
-    ColySyncString& operator+=(const ColySyncString& other) {
+    std::string operator+=(const ColySyncString& other) {
         data += other.data;
         sync_variable(this);
-        return *this;
+        return this->data;
+    }
+    std::string operator+(const std::string& other) const {
+        return std::string(data + other);
+    }
+    std::string& operator+=(const std::string& other) {
+        data += other;
+        sync_variable(this);
+        return this->data;
     }
     bool operator==(const ColySyncString& other) const {
         return data == other.data;
@@ -112,5 +140,6 @@ std::string sync_variable(const ColySyncString* var) {
     return echo;
 }
 #define RegColyVar(varname) ColySyncString varname(#varname, "")
-#define InitColySyncService() do{if(argc<2){return 0;}else{ColyProcessID=argv[1];is_connected = connect_to_server(*session, "localhost", "12345");RegEcho = send_message(*session, "login subprocess " + ColyProcessID);}}while(0)
+#define ReadColyVar(varname) ColyGetString varname(#varname)
+#define InitColySyncService() do{if(argc<2){return 0;}else{ColyProcessID=argv[1];is_connected = connect_to_server(*session, "localhost", "12345");RegEcho = send_message(*session, "login subprocess " + ColyProcessID);}ReadColyVar(OnlyCompile);if(OnlyCompile.data=="true"){return 0;}}while(0)
 #endif // COLY_CPP_SYNC_HPP

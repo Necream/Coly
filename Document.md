@@ -1,4 +1,4 @@
-# Coly v1.0.0
+# Coly v1.3.2
 
 This document was edited in **Chinese**.
 
@@ -6,8 +6,8 @@ This document was edited in **Chinese**.
 
 ## 更新的内容
 
-我们本次更新修复了变量同步的bug，已经是可使用阶段。v0.3.0版本的变量同步存在问题，且多个细节存在明显bug。
-没有制作新的安装脚本，你需要在Windows的`C:\`中创建的文件夹按下面描述的所示
+我们在本次更新时修复了`if`的运行bug，更改了`if`的判定，提升了整体体验。新增了`OnlyCompile`和`NoReg`两个功能变量（上一个版本有`OnlyCompile`，但是没有说明）
+没有制作新的安装脚本，你需要在`Windows`的`C:\`中创建的文件夹按下面描述的所示
 - **C:\\**
   - **Coly\\**
     - **Settings\\**
@@ -24,8 +24,8 @@ This document was edited in **Chinese**.
       - **asio.hpp**
       - **asio\\**
 
-请注意，Coly本次更新采用了MSVC编译工具链，所以`LanguageMap.json`中使用的是`cl.exe`，如果你需要使用`GDB`需要自定更改命令。
-请注意，`VariableSyncServer`不会加密你的数据。所以如果有数据保护的需求请更改代码删掉所有的输出，不影响Client的功能。
+请注意，**Coly**本次更新采用了**MSVC**编译工具链，所以`LanguageMap.json`中使用的是`cl.exe`，如果你需要使用`G++`需要自定更改命令。
+请注意，`VariableSyncServer`不会加密你的数据。所以如果有数据保护的需求请更改代码删掉所有的输出，不影响**Client**的功能。
 
 ## Coly语言
 
@@ -53,8 +53,8 @@ Coly只会同步你代码中特定类型且专门为Coly开发的变量，而**C
 #### 变量同步
 
 - 在v0.3.0之后，Coly中的变量支持同步。在以后的更新中会支持第三方的语言并且允许扩展。如果你现在就需要使用变量同步，你可以在你的C++代码中手动引入Coly库并使用Coly的函数手动同步变量。后续更新不会影响兼容性，但是会导致你的变量发生重复提交。
-- 你的SubProcess继承Process的所有变量，且**访问权限与Process相同**。请注意，如果你在Process中存在未定义的变量但SubProcess中使用了，**就算服务端中存在数据也不能使用**，这是由于Coly的本地缓存机制，且**不会与server保持实时同步**。这个机制既可以缓解访问压力也可以限制变量和代码的作用域，防止Process中的code被SubProcess中的同名code或者var覆盖。
-- 不同的Process之间无法互相访问！
+- ~~你的SubProcess继承Process的所有变量，且**访问权限与Process相同**。请注意，如果你在Process中存在未定义的变量但SubProcess中使用了，**就算服务端中存在数据也不能使用**，这是由于Coly的本地缓存机制，且**不会与server保持实时同步**。这个机制既可以缓解访问压力也可以限制变量和代码的作用域，防止Process中的code被SubProcess中的同名code或者var覆盖。~~ 在Coly v1.3.2中，这个特性由于更频繁的变量同步而被覆盖。
+- 不同的Process之间无法互相访问！如果你需要共享数据，你可以编写一个server用于创建父进程，无限暂停即可。
 - 变量同步使用网络。如果你同意的话，你可以**为Server暴露**，这样你可以分享你的IP并与其他人共享数据。
 
 ---
@@ -121,7 +121,7 @@ Coly注释的语法与Python大体一致，**但不支持Python的多行注释**
 
 `print`是**新增内容**，在Aug 31, 2024的Coly文档中没有体现。
 `print`能够让你输出一定的内容，具体用法如下
-```coly
+```Coly
 define var named varname with Hello, Coly!
 print $varname
 print Hello, World!
@@ -130,15 +130,15 @@ print Hello, World!
 如果你使用`print`，它会在输出玩内容后自动换行。
 例如
 ```
->  ./coly.exe         
-Welcome to Coly! 
+>  ./Coly.exe
+Welcome to Coly!
 
 If you are seeing this message, it means you are currently using InteractiveColy.
-InteractiveColy relies on line-by-line Coly interaction, therefore the define code feature is not available in this mode.  
+InteractiveColy relies on line-by-line Coly interaction, therefore the define code feature is not available in this mode.
 
 If you need to use that feature, please edit your code in a file and then import the library into InteractiveColy.
 
-For more information about Coly - including syntax and available features - please refer to the Coly documentation.        
+For more information about Coly - including syntax and available features - please refer to the Coly documentation.
 -----------------------------------
 >>>define var named 1 with 1
 >>>define var named 2 with 2
@@ -183,21 +183,41 @@ print Press Enter to continue...
 define var named NULL with $InputLine
 ```
 
+##### OnlyCompile
+
+`OnlyCompile`有两种模式，未定义时默认是`false`。
+如果`OnlyCompile`是`true`，并且启动的代码使用了`InitColySyncService()`，那么代码会在运行到这个宏时退出。（仅限C++）
+
+##### NoReg
+
+`NoReg`有两种模式，未定义时默认是`false`。
+如果`NoReg`是`true`，启动代码块时不会为代码块注册，也就意味着代码块无法链接到ColyServer，也无法操作Coly变量，但是可以避免登陆凭证的无效注册，也可以提高代码块的运行速度。
+
+
 #### if ifn
 
 `if`和`ifn`是**新增内容**。
 `if`和`ifn`能够在Coly中判断两个变量是否相等。如果相等，`if`会执行后方的code，`ifn`则不会.若不相等则反之。
 **请注意，`type`分别为`code`和`var`的变量不影响比较。**
 用法
-```coly
-if $var1 $var2 code/position
+```Coly
+if $var1 $var2 [Coly Code]
+ifn $var1 $var2 [Coly Code]
 ```
+例如
+```Coly
+define var named 1 with 1
+define var named 2 with 1
+if $1 $2 print 1
+```
+结果就会输出1
 
 #### 库文件
 
 库文件是**新增内容**，在Aug 31, 2024的文档中没有体现。
 你可以通过引用库文件来使用别人已经提供的代码块。具体方法是`import lib ...`
 在v0.3.0版本中引入了**ColyVariableSyncService**，并且你可以在交互状态下使用`import lib ...`
+请注意，你无需在Windows下使用转义字符。
 
 #### commitvaroperation
 
@@ -281,18 +301,26 @@ get var 123
 
 这个宏需要被引入到main函数的第一行，会自动判定主进程的`ColyProcessID`，需要你引入argc和argv。如果启动环境不满足代码块的要求，会自动退出。
 你也可以把`InitColySyncService()`代码粘贴到你的主函数进行自定义操作。
+如果你在Coly或者其他地方中定义了`NoReg`并且其值为`true`，你的程序会在运行到这里时退出。
 **请注意不要更改库文件以免引起兼容性问题**
 
 ### RegColyVar(varname);
 
 这个函数可以让你定义一个`std::string`类型的变量，并且具有基本的`std::string`的操作。如果你发现有些操作没有被定义，你可以自行使用`varname.data.(std::string的操作)`，然后进行变量同步。其余情况下本类型可以和`std::string`混用。
+**请注意，在注册之后，原先存在于Server上的数据会被覆盖！**
 
 ## ColySyncString
 
 这是`ColyCppSyncLib`的自动同步的`std::string`类型的变量，包含了Coly主进程仅支持的`string`类型。
-如果你要进行同步操作，请先给`ColySyncString`初始化和赋值，赋值直接使用赋值语句即可，适配`std::string`和`char*`
+如果你要进行同步操作，请先给`ColySyncString`初始化和赋值，赋值直接使用赋值语句即可，适配`std::string`和`char*`。
+不建议手动使用。
 
 ## sync_variable(*varname);
 
 该函数可以自动同步你的变量到**ColySyncServer**。
 传入的参数是`ColySyncString`类型的变量指针。
+不建议手动使用。
+
+## ReadColyVar(varname)
+
+可以允许你从Server中以只读方式读取数据，之后你可以使用`varname`进行字符串操作。你可以通过隐式转换为`std::string`，之后可以赋值给`ColyVariable`，可以弥补`RegColyVar()`的缺陷。

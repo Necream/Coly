@@ -8,6 +8,7 @@
 #include <map>
 #include <cstdlib>
 #include <vector>
+#include <regex>
 #include "json.hpp"
 #include "GXPass.hpp"
 #include "VariableSyncService.hpp"
@@ -17,6 +18,197 @@ using JSON = nlohmann::json;
 #else
 #define COLYPATH "/lib/Coly/"
 #endif
+
+void StartProcess(
+    const std::string& filepath,
+    const std::vector<std::string>& argv,
+    std::function<void(const std::string&)> onOutput)
+{
+
+#ifdef _WIN32
+
+    SECURITY_ATTRIBUTES sa{};
+    sa.nLength = sizeof(sa);
+    sa.bInheritHandle = TRUE;
+
+    HANDLE hRead = NULL;
+    HANDLE hWrite = NULL;
+
+    if (!CreatePipe(&hRead, &hWrite, &sa, 0))
+        return;
+
+    SetHandleInformation(hRead, HANDLE_FLAG_INHERIT, 0);
+
+    STARTUPINFOA si{};
+    PROCESS_INFORMATION pi{};
+    si.cb = sizeof(si);
+    si.dwFlags = STARTF_USESTDHANDLES;
+    si.hStdOutput = hWrite;
+    si.hStdError  = hWrite;
+
+    std::string cmd = "\"" + filepath + "\"";
+    for (const auto& a : argv)
+        cmd += " \"" + a + "\"";
+
+    char* cmdCStr = new char[cmd.size() + 1];
+    std::strcpy(cmdCStr, cmd.c_str());
+    BOOL ok = CreateProcessA(
+        NULL,
+        cmdCStr,
+        NULL,
+        NULL,
+        TRUE,
+        CREATE_NO_WINDOW,
+        NULL,
+        NULL,
+        &si,
+        &pi);
+
+    CloseHandle(hWrite);
+
+    if (!ok)
+    {
+        CloseHandle(hRead);
+        return;
+    }
+
+    std::thread([hRead, pi, onOutput]() {
+
+        char buffer[4096];
+
+        while (true)
+        {
+            DWORD bytesAvailable = 0;
+
+            if (!PeekNamedPipe(hRead, NULL, 0, NULL, &bytesAvailable, NULL))
+                break;
+
+            if (bytesAvailable > 0)
+            {
+                DWORD bytesRead = 0;
+                DWORD maxSize = sizeof(buffer) - 1;
+                DWORD toRead = (bytesAvailable < maxSize) ? bytesAvailable : maxSize;
+
+                if (ReadFile(hRead, buffer, toRead, &bytesRead, NULL) && bytesRead > 0)
+                {
+                    buffer[bytesRead] = 0;
+                    onOutput(std::string(buffer));
+                }
+            }
+
+            DWORD exitCode = 0;
+            if (GetExitCodeProcess(pi.hProcess, &exitCode) &&
+                exitCode != STILL_ACTIVE)
+                break;
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+
+        CloseHandle(hRead);
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+
+    }).detach();
+
+
+#else
+
+    int pipefd[2];
+    if (pipe(pipefd) == -1)
+        return;
+
+    pid_t pid = fork();
+
+    if (pid == 0)
+    {
+        dup2(pipefd[1], STDOUT_FILENO);
+        dup2(pipefd[1], STDERR_FILENO);
+
+        close(pipefd[0]);
+        close(pipefd[1]);
+
+        std::vector<char*> args;
+        args.push_back(const_cast<char*>(filepath.c_str()));
+        for (const auto& a : argv)
+            args.push_back(const_cast<char*>(a.c_str()));
+        args.push_back(nullptr);
+
+        execvp(filepath.c_str(), args.data());
+        _exit(1);
+    }
+    else if (pid > 0)
+    {
+        close(pipefd[1]);
+
+        int flags = fcntl(pipefd[0], F_GETFL, 0);
+        fcntl(pipefd[0], F_SETFL, flags | O_NONBLOCK);
+
+        std::thread([pipefd, pid, onOutput]() {
+
+            char buffer[4096];
+
+            struct pollfd pfd{};
+            pfd.fd = pipefd[0];
+            pfd.events = POLLIN;
+
+            while (true)
+            {
+                int ret = poll(&pfd, 1, 50);
+
+                if (ret > 0 && (pfd.revents & POLLIN))
+                {
+                    ssize_t count = read(pipefd[0], buffer, sizeof(buffer) - 1);
+                    if (count > 0)
+                    {
+                        buffer[count] = 0;
+                        onOutput(std::string(buffer));
+                    }
+                }
+
+                int status = 0;
+                pid_t result = waitpid(pid, &status, WNOHANG);
+                if (result == pid)
+                    break;
+            }
+
+            close(pipefd[0]);
+
+        }).detach();
+    }
+
+#endif
+}
+void RunCommand(const std::string& command)
+{
+    std::vector<std::string> args;
+    std::string filepath;
+
+    // 使用正则支持双引号带空格的参数
+    std::regex re(R"((\"[^\"]+\"|\S+))");
+    auto words_begin = std::sregex_iterator(command.begin(), command.end(), re);
+    auto words_end   = std::sregex_iterator();
+
+    bool first = true;
+    for (std::sregex_iterator i = words_begin; i != words_end; ++i) {
+        std::string token = (*i).str();
+        // 去掉双引号
+        if (!token.empty() && token.front() == '"' && token.back() == '"')
+            token = token.substr(1, token.size() - 2);
+
+        if (first) {
+            filepath = token; // 第一个是可执行文件
+            first = false;
+        } else {
+            args.push_back(token); // 后续是参数
+        }
+    }
+
+    StartProcess(filepath, args, [](const std::string& output){
+        std::cout << output;
+    });
+}
+
+
 // Map to store the line number of defined variables, codes and positions
 // This is used to check if a variable or code is defined before use
 std::map<std::string, int> definedline;
@@ -38,6 +230,7 @@ std::string prefix(std::string str,int len){
 // if: if, execute a code
 std::vector<std::string> operationlist = {
     "define",
+    "usewithoutwait",
     "use",
     "jump",
     "printwithoutanewline",
@@ -56,26 +249,18 @@ std::vector<std::string> skipsynclist = {
 // Structure to hold information about defined variables, codes, and positions
 // It includes type, name, language, content, code information, and variable type
 struct defineinfo {
-    std::string type; // code or var
     std::string name; // name of the variable/code/positon
     std::string language; // language type, e.g., C++, Python, etc.
-    std::string content; // content of the variable
-    std::string codeinfo; // additional code information
-    std::string vartype;
+    std::string content; // content of the variable or code
     defineinfo(){
-        type = "";
         name = "";
         language = "";
         content = "";
-        codeinfo = "";
-        vartype = "std::string";
     }
     friend std::ostream& operator<<(std::ostream &os, const defineinfo &info) {
-        os  << "Type: "     << info.type     << std::endl
-        << "Name: "     << info.name     << std::endl
+        os  << "Name: "     << info.name     << std::endl
         << "Language: " << info.language << std::endl
-        << "Content: "  << info.content  << std::endl
-        << "CodeInfo: " << info.codeinfo << std::endl;
+        << "Content: "  << info.content  << std::endl;
         return os;
     }
     std::string getvalue(NetworkSession& session){
@@ -87,87 +272,115 @@ struct defineinfo {
             if(str==this->name) skip=1;
         }
         if(!skip) echo=send_message(session,commit_command);
-        if(prefix(echo, 7) == "[ERROR]"){
+        if(prefix(echo, 7) == "[ERROR]" && !skip){
             std::cout << echo << std::endl;
             return echo;
         }
         JSON j;
         if(!skip) j=JSON::parse(echo);
-        if(type == "var") {
-            if(!skip) this->content=j["Value"];
-            std::string content = this->content;
-            if(name == "InputLine"){
-                getline(std::cin, content);
-            }else if(name == "Input"){
-                std::string temp;
-                std::cin>> content;
-                std::cin.ignore();
-            }
-            return content;
-        } else if(type == "code") {
-            if(!skip) codeinfo=j["Value"];
-            return codeinfo;
+        if(!skip) this->content=j["Value"];
+        std::string content = this->content;
+        if(name == "InputLine"){
+            getline(std::cin, content);
+        }else if(name == "Input"){
+            std::string temp;
+            std::cin>> content;
+            std::cin.ignore();
         }
+        return content;
         return "ERROR: Undefined type";
     }
 };
-// Map to store defined codes
-std::map<std::string, defineinfo> definedcode;
 // Map to store defined positions
 std::map<std::string, int> definedposition;
 // Map to store defined variables
 std::map<std::string, defineinfo> definedvar;
 // Map to store compiled codes
 std::map<std::string, bool> compiledcode;
+std::string GetVarValue(std::string varname, NetworkSession& session){
+    if(definedvar.find(varname) != definedvar.end()){
+        return definedvar[varname].getvalue(session);
+    } else if(definedvar.find(varname) != definedvar.end()){
+        return definedvar[varname].getvalue(session);
+    } else {
+        std::string command="get var "+varname;
+        std::string echo = send_message(session, command);
+        if(prefix(echo,7)=="[ERROR]"){
+            std::cout<<echo<<std::endl;
+            return echo;
+        }
+        JSON j = JSON::parse(echo);
+        return j["Value"];
+    }
+}
+std::string getSyntaxValue(std::string content, NetworkSession& session){
+    std::stringstream ret;
+    for(int i=0;i<content.size();i++){
+        char c = content[i];
+        if(c == '$'){
+            std::string varname;
+            for(i=i+1;i<content.size();i++){
+                if(content[i] == ' ' || content[i] == '\n' || content[i] == '\r'){
+                    break;
+                }
+                varname += content[i];
+            }
+            ret << GetVarValue(varname, session);
+        }else if(c == '\n'){
+            ret << std::endl;
+        }else if(c == '\r'){
+            // Ignore carriage return
+        }else ret << c;
+    }
+    return ret.str();
+}
 // Judge the type of a define operation, register the variable or code and return the defineinfo
-defineinfo judgedefine(std::string content, NetworkSession& session){
+defineinfo judgedefine(std::string content, NetworkSession& session, bool &defining, int lineid, bool &overdefine){
     //0: type 1: named 2: with 3: codeinfo/varinfo 4:vartype 5:| 6: codevar
     defineinfo info;
     int infotype = 0;
     std::string varname="";
-    bool var=0;
+    std::string type="";
+    std::string left="";
+    defining = true;
+    while(content.find("  ") != std::string::npos) content.replace(content.find("  "), 2, " ");
     for(char c : content){
         if(c == ' '){
             infotype++;
             continue;
         }
-        if(infotype == 0){
-            info.type += c;
-        } else if(infotype == 1){
-        } else if(infotype == 2){
+        if(infotype == 0){// type
+            type += c;
+        } else if(infotype == 1){// named
+        } else if(infotype == 2){// name
             info.name += c;
-        } else if(infotype == 3){
-            if(info.type == "var"){
-                info.content = "";
-            } else if(info.type == "code"){
-                info.codeinfo = "";
-            }
-        } else if(infotype == 4&&info.type == "code"){
+        } else if(infotype == 3){// with
+            info.content = "";
+        } else if(infotype == 4&&type == "code"){// Language
             info.language += c;
-        } else if(infotype >= 4&&info.type == "var"){
-            if(varname.empty() && c == '$' && !var){
-                varname = "";
-                var = true;
-            }else if(c == ' ' && var){
-                if(!varname.empty() && definedvar.find(varname) != definedvar.end()){
-                    // std::co<<varname<<std::endl;
-                    info.content = definedvar[varname].getvalue(session);
-                    varname = "";
-                }else std::cout << "Error: Undefined variable: " << varname << std::endl;
-            }else varname += c;
-            // std::co<<c;
+        } else if(infotype >= 4&&type == "var"){// var value
+            left+=c;
+        }else if(infotype ==5 && type == "code"){// |
+        }else if(infotype==6 && type == "code"){
+            left+=c;
         }
     }
-    if(!varname.empty() && var){
-        // std::co<<varname<<std::endl;
-        if(definedvar.find(varname) == definedvar.end()){
-            std::cout << "Error: Undefined variable: " << varname << std::endl;
-        }
-        info.content = definedvar[varname].getvalue(session);
-        // std::co<<info.content<<std::endl;
-        varname = "";
-    }else if(!varname.empty() && !var){
-        info.content = varname;
+    if(infotype==6 && type == "code"){
+        getSyntaxValue(left, session);
+        info.content = left;
+        defining = false;
+    }else if(infotype >= 2&&type == "position"){
+        definedposition[info.name] = lineid;
+        definedline[info.name] = lineid;
+        defining = false;
+        overdefine=0;
+        return defineinfo();
+    }
+    if(!left.empty()){
+        std::string value = getSyntaxValue(left, session);
+        info.content = value;
+        overdefine=1;
+        defining = false;
     }
     // std::co<<info<<std::endl;
     return info;
@@ -269,12 +482,12 @@ std::string getrun(const std::string language) {
 }
 // TODO: 3rd language variable sync service
 // Use a defined code, compile it if necessary, and run it
-void usedefine(std::string content, NetworkSession& session){
+void usedefine(std::string content, NetworkSession& session, bool wait=true) {
     if(definedline.find(content) == definedline.end()){
         std::cout << "Error: Undefined variable or code: " << content << std::endl;
         return;
     }
-    defineinfo info = definedcode[content];
+    defineinfo info = definedvar[content];
     std::string extension = getextension(info.language);
     std::string filename = COLYPATH;
     filename += "TempCode/";
@@ -284,7 +497,7 @@ void usedefine(std::string content, NetworkSession& session){
         std::cout << "Error: Cannot open file " << filename << std::endl;
         return;
     }
-    for(char c:info.codeinfo) fputc(c, fp);
+    for(char c:info.content) fputc(c, fp);
     fclose(fp);
     std::string command = "";
     std::string codename = GXPass::number2ABC(GXPass::compile(info.name));
@@ -298,10 +511,17 @@ void usedefine(std::string content, NetworkSession& session){
     compiledcode[codename] = true; // Mark the code as compiled
     while(pos != std::string::npos) command.replace(pos, 1, outputfilepath),pos = command.find('^');
     pos = command.find('*');
-    while(pos != std::string::npos) command.replace(pos, 1, codename),pos = command.find('*');
+    static std::string RunProof=GXPass::c12c2<int,std::string>(time(0));
+    RunProof = GXPass::number2ABC(GXPass::compile(RunProof));
+    while(pos != std::string::npos) command.replace(pos, 1, RunProof),pos = command.find('*');
     std::string regcommand = "reg subprocess ";
-    regcommand += codename;
-    std::string echo = send_message(session, regcommand);
+    regcommand += RunProof;
+    std::string echo;
+    if(definedvar.find("NoReg") != definedvar.end()){
+        if(definedvar["NoReg"].getvalue(session) != "true"){
+            echo = send_message(session, regcommand);
+        }
+    }else echo = send_message(session, regcommand);
     if(prefix(echo, 7) == "[ERROR]"){
         std::cout << echo << std::endl;
         return;
@@ -311,34 +531,17 @@ void usedefine(std::string content, NetworkSession& session){
         return;
     }
     // std::cout<< "Running command: " << command << std::endl;
-    system(command.c_str());
+    if(wait) system(command.c_str());
+    else{
+        if((compiledcode.find(codename) != compiledcode.end() && compiledcode[codename]) || !getneedcompile(info.language)){
+            RunCommand(command);
+        }
+    }
 }
 // Print the content to the console, handling variables and newlines
 // This function replaces variables with their values and prints the content to the console
 void print(const std::string &content, NetworkSession& session) {
-    for(int i=0;i<content.size();i++){
-        char c = content[i];
-        if(c == '$'){
-            std::string varname;
-            for(i=i+1;i<content.size();i++){
-                if(content[i] == ' ' || content[i] == '\n' || content[i] == '\r'){
-                    break;
-                }
-                varname += content[i];
-            }
-            if(definedvar.find(varname) != definedvar.end()){
-                std::cout << definedvar[varname].getvalue(session);
-            } else if(definedcode.find(varname) != definedcode.end()){
-                std::cout << definedcode[varname].getvalue(session);
-            } else {
-                std::cout << "Error: Undefined variable: " << varname << std::endl;
-            }
-        }else if(c == '\n'){
-            std::cout << std::endl;
-        }else if(c == '\r'){
-            // Ignore carriage return
-        }else std::cout << c;
-    }
+    std::cout<< getSyntaxValue(content, session);
 }
 std::string definevarcommand(defineinfo info, NetworkSession& session){
     for(std::string str:skipsynclist){
@@ -347,7 +550,7 @@ std::string definevarcommand(defineinfo info, NetworkSession& session){
     std::string command;
     JSON j = {
         {"Name", info.name},
-        {"Value", info.type == "code" ? info.codeinfo : info.content},
+        {"Value", info.content},
         {"Timestamp", time(0)}
     };
     command = "sync var " + j.dump();
@@ -356,24 +559,25 @@ std::string definevarcommand(defineinfo info, NetworkSession& session){
 }
 std::vector<std::string> readCly(std::string path);
 void useCly(std::vector<std::string> lines,NetworkSession& session);
+void doCly(std::string content, int *lineid, NetworkSession& session);
 // Address a line of code, handling different operations like define, use, jump, import, print, etc.
 // This function processes a line of code and performs the corresponding operation
 void addressline(std::string line,int *lineid, NetworkSession& session){
-    static bool defined = false;
+    static bool defining = false;
     bool overdefine=0;
     static defineinfo info;
     bool definedoperation=0;
     std::string commit_command="";
     std::string content = line;
-    if(defined && info.type == "code" && content[0] == '|'){
+    if(defining && content[0] == '|'){
         content = content.substr(1);
         // std::co<<content<<" | "<<info.codeinfo<<std::endl;
-        info.codeinfo += content + "\n";
+        info.content += content + "\n";
         return;
-    }else if(defined && info.type == "code" && content[0] != '|'){
-        defined = false;
+    }else if(defining && content[0] != '|'){
+        defining = false;
         overdefine = 1;
-        definedcode[info.name] = info;
+        definedvar[info.name] = info;
     }
     for(int i=0;i<operationlist.size();i++){
         if(prefix(line, operationlist[i].length()) == operationlist[i]){
@@ -382,15 +586,9 @@ void addressline(std::string line,int *lineid, NetworkSession& session){
             if(operationlist[i] == "define"){
                 definedoperation=1;
                 // std::co << "Defining: " << content << std::endl;
-                info=judgedefine(content, session);
+                info=judgedefine(content, session,defining,*lineid,overdefine);
                 // std::co<<info<<std::endl;
-                if(info.type == "code"){
-                    defined = true;
-                }else if(info.type == "var"){
-                    definedvar[info.name] = info;
-                    overdefine = 1;
-                }else if(info.type == "position") definedposition[info.name] = *lineid;
-                else std::cout << "Error: Unknown define type: " << info.type << std::endl;
+                if(!info.name.empty()) definedvar[info.name] = info;
                 // if(!command.empty()){
                 //     std::string echo=send_message(session, command);
                 //     std::cout<<echo<<std::endl;
@@ -398,7 +596,13 @@ void addressline(std::string line,int *lineid, NetworkSession& session){
                 //         std::cout<<echo<<std::endl;
                 //     }
                 // }
-                definedline[info.name] = *lineid;
+                if(!info.name.empty()) definedline[info.name] = *lineid;
+                break;
+            } else if(operationlist[i] == "usewithoutwait"){
+                definedoperation=1;
+                // std::co << "Using: " << content << std::endl;
+                // std::co<< info <<std::endl;
+                usedefine(content, session, false);
                 break;
             } else if(operationlist[i] == "use"){
                 definedoperation=1;
@@ -423,32 +627,8 @@ void addressline(std::string line,int *lineid, NetworkSession& session){
                 break;
             }else if (operationlist[i] == "do") {
                 definedoperation=1;
-                // std::co << "Executing: " << content << std::endl;
-                std::string command = "";
-                for(int j = 0; j < content.size(); j++) {
-                    if (content[j] == '$') {
-                        std::string varname="";
-                        for (j = j + 1; j < content.size(); j++) {
-                            if (content[j] == ' ' || content[j] == '\n' || content[j] == '\r') {
-                                break;
-                            }
-                            varname += content[j];
-                        }
-                        // std::co<<varname<<std::endl;
-                        if (definedvar.find(varname) != definedvar.end()) {
-                            command+=definedvar[varname].getvalue(session);
-                        } else if(definedcode.find(varname) != definedcode.end()) {
-                            command+=definedcode[varname].getvalue(session);
-                        } else {
-                            std::cout << "Error: Undefined variable: " << varname << std::endl;
-                        }
-                    } else {
-                        command += content[j];
-                    }
-                }
-                // std::co << "Command to execute: " << command << std::endl;
                 int *fake_lineid = new int(-1);
-                addressline(command, fake_lineid, session);
+                doCly(content, fake_lineid, session);
                 delete fake_lineid;
                 break;
             } else if (operationlist[i] == "exit") {
@@ -458,69 +638,61 @@ void addressline(std::string line,int *lineid, NetworkSession& session){
                 definedoperation=1;
                 // std::co << "If: " << content << std::endl;
                 int varnum=0;
-                defineinfo var1,var2;
+                std::string var1,var2;
                 std::string varname;
-                for(char c : content){
+                std::string left="";
+                for(int i=0;i<content.size();i++){
+                    char c = content[i];
                     if(c=='$'){
                         varnum++;
                     } else if(c==' '){
                         if(varnum == 1) {
-                            if(definedcode.find(varname)!=definedcode.end()){
-                                var1=definedcode[varname];
-                            } else if(definedvar.find(varname)!=definedvar.end()){
-                                var1=definedvar[varname];
-                            } else {
-                                std::cout << "Error: Undefined variable: " << varname << std::endl;
-                            }
+                            var1=GetVarValue(varname, session);
                         } else if (varnum == 2) {
-                            if(definedcode.find(varname)!=definedcode.end()){
-                                var2=definedcode[varname];
-                            } else if(definedvar.find(varname)!=definedvar.end()){
-                                var2=definedvar[varname];
-                            } else {
-                                std::cout << "Error: Undefined variable: " << varname << std::endl;
+                            var2=GetVarValue(varname, session);
+                            i++;
+                            for(;i<content.size();i++){
+                                left+=content[i];
                             }
+                            break;
                         }
                         varname="";
                     } else varname+=c;
                     // else break;
                 }
-                // std::co<<var1<<std::endl<<var2<<std::endl<<varname<<std::endl;
-                if(var1.getvalue(session)==var2.getvalue(session)) usedefine(varname, session);
+
+                // std::cout<<"var1: "<<var1<<" var2: "<<var2<<" left: "<<left<<std::endl;
+                if(var1==var2) doCly(left, lineid, session);
                 break;
             } else if(operationlist[i] == "ifn") {
                 definedoperation=1;
-                // std::co << "Ifn: " << content << std::endl;
+                // std::co << "If: " << content << std::endl;
                 int varnum=0;
-                defineinfo var1,var2;
+                std::string var1,var2;
                 std::string varname;
-                for(char c : content){
+                std::string left="";
+                for(int i=0;i<content.size();i++){
+                    char c = content[i];
                     if(c=='$'){
                         varnum++;
                     } else if(c==' '){
                         if(varnum == 1) {
-                            if(definedcode.find(varname)!=definedcode.end()){
-                                var1=definedcode[varname];
-                            } else if(definedvar.find(varname)!=definedvar.end()){
-                                var1=definedvar[varname];
-                            } else {
-                                std::cout << "Error: Undefined variable: " << varname << std::endl;
-                            }
+                            var1=GetVarValue(varname, session);
                         } else if (varnum == 2) {
-                            if(definedcode.find(varname)!=definedcode.end()){
-                                var2=definedcode[varname];
-                            } else if(definedvar.find(varname)!=definedvar.end()){
-                                var2=definedvar[varname];
-                            } else {
-                                std::cout << "Error: Undefined variable: " << varname << std::endl;
+                            var2=GetVarValue(varname, session);
+                            i++;
+                            for(;i<content.size();i++){
+                                left+=content[i];
                             }
+                            break;
                         }
                         varname="";
                     } else varname+=c;
                     // else break;
                 }
-                // std::co<<var1<<std::endl<<var2<<std::endl<<varname<<std::endl;
-                if(var1.getvalue(session)!=var2.getvalue(session)) usedefine(varname, session);
+
+                // std::cout<<"var1: "<<var1<<" var2: "<<var2<<" left: "<<left<<std::endl;
+                if(var1!=var2) doCly(left, lineid, session);
                 break;
             } else if(operationlist[i] == "import lib"){
                 definedoperation=1;
@@ -538,7 +710,7 @@ void addressline(std::string line,int *lineid, NetworkSession& session){
         }
     }
     if(!definedoperation) std::cout<<"Unknown Command:"<<line<<std::endl;
-    if(overdefine){  // TODO:
+    if(overdefine){
         commit_command=definevarcommand(info, session);
         if(!commit_command.empty()){
             std::string echo=send_message(session, commit_command);
@@ -547,7 +719,12 @@ void addressline(std::string line,int *lineid, NetworkSession& session){
                 std::cout<<echo<<std::endl;
             }
         }
+        overdefine=0;
     }
+}
+void doCly(std::string content, int *lineid, NetworkSession& session){
+    std::string command = getSyntaxValue(content, session);
+    addressline(command, lineid, session);
 }
 // Read a Coly file and return its lines, handling imports
 std::vector<std::string> readCly(std::string path){
