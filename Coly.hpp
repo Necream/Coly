@@ -15,8 +15,10 @@
 using JSON = nlohmann::json;
 #ifdef _WIN32
 #define COLYPATH "C:\\Coly\\"
+#define TempPATH "C:\\Coly\\TempCode\\"
 #else
 #define COLYPATH "/lib/Coly/"
+#define TempPATH "/usr/local/lib/Coly/TempCode/"
 #endif
 
 void StartProcess(
@@ -244,7 +246,8 @@ std::vector<std::string> operationlist = {
 };
 std::vector<std::string> skipsynclist = {
     "Input",
-    "InputLine"
+    "InputLine",
+    "NoReg"
 };
 // Structure to hold information about defined variables, codes, and positions
 // It includes type, name, language, content, code information, and variable type
@@ -252,10 +255,12 @@ struct defineinfo {
     std::string name; // name of the variable/code/positon
     std::string language; // language type, e.g., C++, Python, etc.
     std::string content; // content of the variable or code
+    bool isprivate; // whether the variable or code is private
     defineinfo(){
         name = "";
         language = "";
         content = "";
+        isprivate = false;
     }
     friend std::ostream& operator<<(std::ostream &os, const defineinfo &info) {
         os  << "Name: "     << info.name     << std::endl
@@ -266,26 +271,22 @@ struct defineinfo {
     std::string getvalue(NetworkSession& session){
         std::string commit_command="get var ";
         commit_command+=this->name;
-        std::string echo;
-        bool skip=0;
-        for(std::string str:skipsynclist){
-            if(str==this->name) skip=1;
-        }
-        if(!skip) echo=send_message(session,commit_command);
-        if(prefix(echo, 7) == "[ERROR]" && !skip){
+        std::string echo="";
+        if(!isprivate) echo=send_message(session,commit_command);
+        if(prefix(echo, 7) == "[ERROR]" && !isprivate){
             std::cout << echo << std::endl;
             return echo;
         }
         JSON j;
-        if(!skip) j=JSON::parse(echo);
-        if(!skip) this->content=j["Value"];
+        if(!isprivate) j=JSON::parse(echo);
+        if(!isprivate) this->content=j["Value"];
         std::string content = this->content;
         if(name == "InputLine"){
-            getline(std::cin, content);
+            std::getline(std::cin >> std::ws, content);
         }else if(name == "Input"){
             std::string temp;
             std::cin>> content;
-            std::cin.ignore();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         }
         return content;
         return "ERROR: Undefined type";
@@ -313,7 +314,7 @@ std::string GetVarValue(std::string varname, NetworkSession& session){
         return j["Value"];
     }
 }
-std::string getSyntaxValue(std::string content, NetworkSession& session){
+std::string getSyntaxValue(const std::string &content, NetworkSession& session){
     std::stringstream ret;
     for(int i=0;i<content.size();i++){
         char c = content[i];
@@ -356,15 +357,17 @@ defineinfo judgedefine(std::string content, NetworkSession& session, bool &defin
             info.name += c;
         } else if(infotype == 3){// with
             info.content = "";
-        } else if(infotype == 4&&type == "code"){// Language
+        } else if(infotype == 4&&(type == "code"||type == "privatecode")){// Language
             info.language += c;
-        } else if(infotype >= 4&&type == "var"){// var value
+        } else if(infotype >= 4&&(type == "var"||type == "privatevar")){// var value
             left+=c;
         }else if(infotype ==5 && type == "code"){// |
         }else if(infotype==6 && type == "code"){
             left+=c;
         }
     }
+    if(type == "privatevar" || type == "privatecode") info.isprivate = true;
+    for(std::string str:skipsynclist) if(str==info.name) info.isprivate = true;
     if(infotype==6 && type == "code"){
         getSyntaxValue(left, session);
         info.content = left;
@@ -482,15 +485,14 @@ std::string getrun(const std::string language) {
 }
 // TODO: 3rd language variable sync service
 // Use a defined code, compile it if necessary, and run it
-void usedefine(std::string content, NetworkSession& session, bool wait=true) {
+void usedefine(const std::string &content, NetworkSession& session, bool wait=true) {
     if(definedline.find(content) == definedline.end()){
         std::cout << "Error: Undefined variable or code: " << content << std::endl;
         return;
     }
     defineinfo info = definedvar[content];
     std::string extension = getextension(info.language);
-    std::string filename = COLYPATH;
-    filename += "TempCode/";
+    std::string filename = TempPATH;
     filename += GXPass::number2ABC(GXPass::compile(info.name))+"."+extension;
     FILE *fp = fopen(filename.c_str(), "wb");
     if (!fp) {
@@ -543,10 +545,8 @@ void usedefine(std::string content, NetworkSession& session, bool wait=true) {
 void print(const std::string &content, NetworkSession& session) {
     std::cout<< getSyntaxValue(content, session);
 }
-std::string definevarcommand(defineinfo info, NetworkSession& session){
-    for(std::string str:skipsynclist){
-        if(info.name==str) return "";
-    }
+std::string definevarcommand(const defineinfo &info, NetworkSession& session){
+    if(info.isprivate == true) return "";
     std::string command;
     JSON j = {
         {"Name", info.name},
@@ -562,7 +562,13 @@ void useCly(std::vector<std::string> lines,NetworkSession& session);
 void doCly(std::string content, int *lineid, NetworkSession& session);
 // Address a line of code, handling different operations like define, use, jump, import, print, etc.
 // This function processes a line of code and performs the corresponding operation
-void addressline(std::string line,int *lineid, NetworkSession& session){
+void addressline(const std::string &lineContent,int *lineid, NetworkSession& session){
+    std::string line = "";
+    for(char c:lineContent){
+        if( c != '\t'&&
+            c != '\r'&&
+            c != '\n') line += c;
+    }
     static bool defining = false;
     bool overdefine=0;
     static defineinfo info;

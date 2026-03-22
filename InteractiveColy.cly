@@ -10,6 +10,7 @@ print -----------------------------------
 define var named InputLine
 define position named for
 printwithoutanewline >>>
-define var named varname with $InputLine
+# 'privatevar' is supported in v1.5.3
+define privatevar named varname with $InputLine
 do $varname
 jump for

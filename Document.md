@@ -1,4 +1,4 @@
-# Coly v1.3.2
+# Coly v1.5.3
 
 This document was edited in **Chinese**.
 
@@ -6,26 +6,58 @@ This document was edited in **Chinese**.
 
 ## 更新的内容
 
-我们在本次更新时修复了`if`的运行bug，更改了`if`的判定，提升了整体体验。新增了`OnlyCompile`和`NoReg`两个功能变量（上一个版本有`OnlyCompile`，但是没有说明）
-没有制作新的安装脚本，你需要在`Windows`的`C:\`中创建的文件夹按下面描述的所示
+我们在本次更新时修复了`Input`和`InputLine`在Linux下可能导致不可用的问题，原因是`'\r'`和`'\n'`没有被妥善处理。
+我们在本次更新时新增了`privatevar`和`privatecode`，不会被同步到**Server**，能够在不需要的时候显著提升运行速度。
+我们新增了`OnlyCompile`和`NoReg`变量，其中`NoReg`不会同步到`ColyVariableSyncService`。
+**请注意，如果你指定了`NoReg = true`，那么`OnlyCompile`也不会生效，因为`OnlyCompile`标记通过VariableSyncService传递。**
+
+## 安装和使用
+
+请你使用安装脚本，或者按照下面的结构手动安装。
+
+你需要在`Linux`的`/lib/`中创建的文件夹按下面描述的所示
+- **/lib/**
+  - **Coly/**
+    - **Settings/**
+      - **LanguageMap.json（请手动拷贝LanguageMap_Linux.json）**
+    - **VariableSyncService/**
+      - **server（你可以自己改名，可以开机自启动，但是要求在Coly启动之前必须启动）**
+    - **VariableSyncLib/（存储了你编写C++代码块时需要用的库，采用了标准的ColyVariableSyncService接口，使用时include "ColyCppSync.hpp"）**
+      - **json.hpp**
+      - **GXPass.hpp**
+      - **NCInt.hpp**
+      - **asio.hpp**
+      - **asio/**
+
+另外，你需要创建`/usr/local/share/Coly/TempCode`文件夹，并执行
+```Bash
+sudo chmod 777 /usr/local/share/Coly -R
+sudo chown nobody:nogroup /usr/local/share/Coly -R
+```
+
+你需要在`Windows`的`C:\`中创建的文件夹按下面描述的所示
 - **C:\\**
   - **Coly\\**
     - **Settings\\**
-      - **LanguageMap.json（请手动拷贝）**
+      - **LanguageMap.json（请手动拷贝LanguageMap_Windows.json）**
     - **TempCode\\**
     - **InteractiveColy.cly（如果你不需要可以不拷贝，但是如果你不拷贝这个文件在无命令行启动时会出现错误并且无法启动）**
     - **VariableSyncService\\**
       - **server.exe（你可以自己改名，可以开机自启动，但是要求在Coly启动之前必须启动）**
     - **VariableSyncLib\\（存储了你编写C++代码块时需要用的库，采用了标准的ColyVariableSyncService接口，使用时include "ColyCppSync.hpp"）**
-      - **GXPass.hpp**
       - **json.hpp**
       - **GXPass.hpp**
       - **NCInt.hpp**
       - **asio.hpp**
       - **asio\\**
 
-请注意，**Coly**本次更新采用了**MSVC**编译工具链，所以`LanguageMap.json`中使用的是`cl.exe`，如果你需要使用`G++`需要自定更改命令。
-请注意，`VariableSyncServer`不会加密你的数据。所以如果有数据保护的需求请更改代码删掉所有的输出，不影响**Client**的功能。
+请注意，**Coly**采用了**MSVC**编译工具链，所以`LanguageMap_Windows.json`中使用的是`cl.exe`，如果你需要使用`g++`需要自定更改命令。
+
+请注意，`ColyVariableSyncService`不会加密你的数据。所以如果有数据保护的需求请更改代码删掉所有的输出，不影响**Client**的功能。
+
+## 更新日志
+
+- v1.3.2:我们在本次更新时修复了`if`的运行bug，更改了`if`的判定，提升了整体体验。新增了`OnlyCompile`和`NoReg`两个功能变量（上一个版本有`OnlyCompile`，但是没有说明）
 
 ## Coly语言
 
@@ -91,6 +123,8 @@ Coly注释的语法与Python大体一致，**但不支持Python的多行注释**
 在上面给出的`示例 1`中，定义了一个代码块名为1，使用C++编程语言，继承上文中使用的所有全局变量。
 **你为变量起名时无需注意任何内容，非英文，emoji均可，无空格即可，因为Coly会依照空格区分内容。`$`会被识别成变量名字的一部分。**
 在`define code`的内容中，你需要在每一行前加上`|`来区分内容。**请注意，你必须加在行首，这里Coly不会自动忽略你的空格。**
+
+从**v1.5.3**开始，Coly支持`privatecode`和`privatevar`两个新类型，用法和`code`和`var`一样，但是不会同步到`ColyVariableSyncService`。
 
 #### use
 
@@ -161,6 +195,7 @@ For more information about Coly - including syntax and available features - plea
 #### 功能变量
 
 功能变量例如`Input`，能够让你在使用时进行一定的交互，使用之前需要提前声明。
+例如`define var named Input`。
 
 ##### Input InputLine
 
@@ -197,20 +232,21 @@ define var named NULL with $InputLine
 #### if ifn
 
 `if`和`ifn`是**新增内容**。
-`if`和`ifn`能够在Coly中判断两个变量是否相等。如果相等，`if`会执行后方的code，`ifn`则不会.若不相等则反之。
+`if`和`ifn`能够在Coly中判断两个变量是否相等。如果相等，`if`会执行后方的`code`，`ifn`则不会.若不相等则反之。
 **请注意，`type`分别为`code`和`var`的变量不影响比较。**
 用法
 ```Coly
 if $var1 $var2 [Coly Code]
 ifn $var1 $var2 [Coly Code]
 ```
+其中`[Coly Code]`代表可以执行的Coly代码，仅限一行。
 例如
 ```Coly
 define var named 1 with 1
 define var named 2 with 1
 if $1 $2 print 1
 ```
-结果就会输出1
+结果就会输出1。
 
 #### 库文件
 
@@ -221,7 +257,7 @@ if $1 $2 print 1
 
 #### commitvaroperation
 
-`commitvaroperation`允许你直接向**VariableSyncServer**发起请求，以便多元的开发流程。
+`commitvaroperation`允许你直接向**ColyVariableSyncService**发起请求，以便多元的开发流程。
 **请注意如果遇到问题，你会收到错误信息，并且在Server的控制台/日志中会有体现。你需要自行解决错误信息带来的影响。在Coly中，我们已经加入了错误判断。**
 用法
 ```Coly
@@ -254,7 +290,7 @@ commitvaroperation reg subprocess 123
 下面是两个JSON的结构，你也可以通过Coly目录下的`client`来获取，具体方法是
 ```VariableSync
 reg process test
-set var {"Name":"1","Value":"1",Timestamp:1}
+set var {"Name":"1","Value":"1","Timestamp":1}
 get var 1
 get process
 ```

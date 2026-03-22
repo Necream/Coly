@@ -3,6 +3,14 @@
 #endif
 #include <iostream>
 #include <string>
+#ifndef _WIN32
+// 提供 pid_t 类型定义
+#include <sys/types.h>
+// 提供 waitpid 函数声明
+#include <sys/wait.h>
+// 如果用到了 fork/exec 等函数，还需要这个头文件
+#include <unistd.h>
+#endif
 #include "Coly.hpp"
 using namespace std;
 #ifdef _WIN32
