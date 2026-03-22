@@ -1,127 +1,123 @@
 #!/bin/bash
-# Coly v1.5.3 Full Install & Build Script (Linux)
-# Auto-install dependencies, create directories, compile and set permissions
-# Usage: chmod +x install_build.sh && sudo ./install_build.sh
+set -e
 
-# 1. Install required system dependencies
-echo "Installing required dependencies..."
-apt update > /dev/null 2>&1
-apt install -y g++ libasio-dev python3 > /dev/null 2>&1
-
-if [ $? -ne 0 ]; then
-    echo "Error: Failed to install system dependencies"
-    exit 1
-fi
-
-# 2. Define core paths (matches documentation structure)
+# ===================== 核心配置（通用，无需改） =====================
+CURRENT_DIR=$(pwd)
 COLY_ROOT="/lib/Coly"
-SRC_DIR="${COLY_ROOT}/src"
-LIB_DIR="${COLY_ROOT}/VariableSyncLib"
-SETTINGS_DIR="${COLY_ROOT}/Settings"
 SERVICE_DIR="${COLY_ROOT}/VariableSyncService"
 TEMP_DIR="/usr/local/share/Coly/TempCode"
-OUTPUT_BIN="${COLY_ROOT}/coly"
-SERVICE_BIN="${SERVICE_DIR}/server"
+# Server重命名为ColyServer
+SERVER_NEW_NAME="ColyServer"
+# 需要复制的配置文件（添加你的InteractiveColy.cly）
+CONFIG_FILE="InteractiveColy.cly"
 
-# 3. Create all required directories with full permissions
-echo "Creating directory structure..."
-for dir in "${COLY_ROOT}" "${SRC_DIR}" "${LIB_DIR}" "${SETTINGS_DIR}" "${SERVICE_DIR}" "${TEMP_DIR}"; do
-    mkdir -p "${dir}"
-    chmod 777 "${dir}"
-    
-    # Verify directory creation and permissions
-    if [ ! -d "${dir}" ] || [ ! -w "${dir}" ]; then
-        echo "Error: Failed to create/write to directory ${dir}"
-        exit 1
-    fi
-done
-
-# 4. Create default source files (if missing) - replace with your actual source code
-echo "Creating default source files (replace with actual code in production)..."
-# Main Coly executable source
-cat > "${SRC_DIR}/main.cpp" << EOF
-#include <iostream>
-int main(int argc, char* argv[]) {
-    std::cout << "Coly v1.5.3 - Linux Build" << std::endl;
-    return 0;
-}
-EOF
-
-# VariableSyncService server source
-cat > "${SERVICE_DIR}/server.cpp" << EOF
-#include <iostream>
-int main(int argc, char* argv[]) {
-    std::cout << "Coly VariableSyncService - Running" << std::endl;
-    while(true) { sleep(1); } // Keep server running
-    return 0;
-}
-EOF
-
-# 5. Copy default library headers (adjust paths to your actual lib files)
-echo "Copying default library headers..."
-# Example: Copy asio headers (adjust if using local asio)
-if [ -d "/usr/include/asio" ]; then
-    cp -r /usr/include/asio "${LIB_DIR}/"
+# 关键：获取真正的登录用户（即使sudo运行，也能拿到原用户）
+REAL_USER=$(logname 2>/dev/null || echo $SUDO_USER)
+# 兜底：如果以上都获取不到，用当前用户
+if [ -z "${REAL_USER}" ]; then
+    REAL_USER=$(whoami)
 fi
+# 登录用户的家目录
+USER_HOME="/home/${REAL_USER}"
+# 登录用户的bashrc路径
+USER_BASHRC="${USER_HOME}/.bashrc"
+# PATH配置项（同时添加Coly和ColyServer的目录）
+COLY_PATH_ENTRY="export PATH=\"\$PATH:${COLY_ROOT}:${SERVICE_DIR}\""
 
-# Create placeholder for other required headers
-touch "${LIB_DIR}/json.hpp" "${LIB_DIR}/GXPass.hpp" "${LIB_DIR}/NCInt.hpp"
+# ===================== 1. 安装系统依赖 =====================
+echo "Step 1/6: Installing system dependencies..."
+apt update -y > /dev/null 2>&1
+apt install -y g++ python3 > /dev/null 2>&1
+echo "✅ System dependencies installed (g++/python3 only)."
 
-# 6. Compile with C++20 standard
-echo "Compiling Coly core (C++20)..."
-g++ -std=c++20 \
-    -I. \
-    -I"${LIB_DIR}" \
-    "${SRC_DIR}/main.cpp" \
-    -o "${OUTPUT_BIN}" \
-    -lpthread
+# ===================== 2. 创建目标目录 =====================
+echo "Step 2/6: Creating target directories..."
+mkdir -p "${COLY_ROOT}" "${SERVICE_DIR}" "${TEMP_DIR}"
+chmod 777 "${COLY_ROOT}" "${SERVICE_DIR}" "${TEMP_DIR}" -R
+echo "✅ Target directories created: ${COLY_ROOT}, ${SERVICE_DIR}"
 
-if [ ! -f "${OUTPUT_BIN}" ]; then
-    echo "Error: Failed to compile Coly core executable"
+# ===================== 3. 本地编译 =====================
+echo "Step 3/6: Compiling in current directory (${CURRENT_DIR})..."
+
+# 3.1 编译Coly.cpp
+if [ -f "${CURRENT_DIR}/Coly.cpp" ]; then
+    g++ -std=c++20 -I. "${CURRENT_DIR}/Coly.cpp" -o "${CURRENT_DIR}/coly" -lpthread
+    chmod 777 "${CURRENT_DIR}/coly"
+    echo "✅ Compiled: Coly.cpp → ${CURRENT_DIR}/coly"
+else
+    echo "❌ Error: Coly.cpp not found in current directory!"
     exit 1
 fi
 
-echo "Compiling VariableSyncService (C++20)..."
-g++ -std=c++20 \
-    -I. \
-    -I"${LIB_DIR}" \
-    "${SERVICE_DIR}/server.cpp" \
-    -o "${SERVICE_BIN}" \
-    -lpthread
-
-if [ ! -f "${SERVICE_BIN}" ]; then
-    echo "Error: Failed to compile VariableSyncService"
+# 3.2 编译server.cpp（本地仍为server，复制时重命名）
+if [ -f "${CURRENT_DIR}/server.cpp" ]; then
+    g++ -std=c++20 -I. "${CURRENT_DIR}/server.cpp" -o "${CURRENT_DIR}/server" -lpthread
+    chmod 777 "${CURRENT_DIR}/server"
+    echo "✅ Compiled: server.cpp → ${CURRENT_DIR}/server"
+else
+    echo "❌ Error: server.cpp not found in current directory!"
     exit 1
 fi
 
-# 7. Set executable permissions
-chmod 777 "${OUTPUT_BIN}" "${SERVICE_BIN}"
+# ===================== 4. 复制编译产物（重命名Server为ColyServer） =====================
+echo "Step 4/6: Copying binaries to target directory..."
+# 复制Coly
+cp -f "${CURRENT_DIR}/coly" "${COLY_ROOT}/"
+echo "✅ Copied: coly → ${COLY_ROOT}/coly"
+# 复制并将server重命名为ColyServer
+cp -f "${CURRENT_DIR}/server" "${SERVICE_DIR}/${SERVER_NEW_NAME}"
+chmod 777 "${SERVICE_DIR}/${SERVER_NEW_NAME}"
+echo "✅ Copied & renamed: server → ${SERVICE_DIR}/${SERVER_NEW_NAME}"
 
-# 8. Generate LanguageMap_Linux.json (C++20)
-echo "Generating LanguageMap configuration..."
-cat > "${SETTINGS_DIR}/LanguageMap_Linux.json" << EOF
-{
-    "C++": "g++ -std=c++20 -I${LIB_DIR} \$SRC -o \$OUT -lpthread",
-    "Python": "python3 \$SRC"
-}
-EOF
+# ===================== 5. 复制配置文件（关键：添加InteractiveColy.cly） =====================
+echo "Step 5/6: Copying configuration file (${CONFIG_FILE})..."
+if [ -f "${CURRENT_DIR}/${CONFIG_FILE}" ]; then
+    # 复制到coly的运行目录（/lib/Coly），和报错路径一致
+    cp -f "${CURRENT_DIR}/${CONFIG_FILE}" "${COLY_ROOT}/"
+    chmod 777 "${COLY_ROOT}/${CONFIG_FILE}"
+    echo "✅ Copied: ${CONFIG_FILE} → ${COLY_ROOT}/${CONFIG_FILE}"
+else
+    echo "❌ Error: ${CONFIG_FILE} not found in current directory!"
+    exit 1
+fi
 
-# 9. Create startup script for VariableSyncService
-echo "Creating startup script for VariableSyncService..."
-cat > "/usr/bin/coly-service" << EOF
-#!/bin/bash
-${SERVICE_BIN} &
-echo "Coly VariableSyncService started (PID: \$!)"
-EOF
-chmod 777 /usr/bin/coly-service
+# ===================== 6. 配置登录用户的PATH（包含ColyServer目录） =====================
+echo "Step 6/6: Configuring PATH for user '${REAL_USER}'..."
 
-# 10. Final setup verification
+# 检查用户bashrc是否存在
+if [ ! -f "${USER_BASHRC}" ]; then
+    echo "ℹ️ Creating ${USER_BASHRC} for user '${REAL_USER}'..."
+    touch "${USER_BASHRC}"
+    chown "${REAL_USER}:${REAL_USER}" "${USER_BASHRC}"
+fi
+
+# 检查PATH是否已配置，避免重复添加
+if ! grep -qxF "${COLY_PATH_ENTRY}" "${USER_BASHRC}"; then
+    # 添加到用户bashrc（同时包含Coly和ColyServer的目录）
+    echo "${COLY_PATH_ENTRY}" >> "${USER_BASHRC}"
+    # 修复文件所有者（避免sudo导致文件归root）
+    chown "${REAL_USER}:${REAL_USER}" "${USER_BASHRC}"
+    echo "✅ Added ${COLY_ROOT} and ${SERVICE_DIR} to PATH (${USER_BASHRC})"
+    # 临时生效当前会话（普通用户）
+    export PATH="$PATH:${COLY_ROOT}:${SERVICE_DIR}"
+else
+    echo "ℹ️ PATH already contains ${COLY_ROOT} and ${SERVICE_DIR} for user '${REAL_USER}' (skipping)"
+fi
+
+# ===================== 完成提示（通用） =====================
+echo -e "\n========================================"
+echo "🎉 Build & Install Success!"
 echo "========================================"
-echo "Coly v1.5.3 Install & Build Complete"
+echo "🔧 User Info:"
+echo "   - Installed for user: ${REAL_USER}"
+echo "   - User home directory: ${USER_HOME}"
+echo "🔧 File Info:"
+echo "   - Local binaries: ${CURRENT_DIR}/coly, ${CURRENT_DIR}/server"
+echo "   - Installed to: ${COLY_ROOT}/coly (run: coly)"
+echo "   - Installed to: ${SERVICE_DIR}/${SERVER_NEW_NAME} (run: ${SERVER_NEW_NAME})"
+echo "   - Config file: ${COLY_ROOT}/${CONFIG_FILE}"
+echo "💡 How to use (for user '${REAL_USER}'):"
+echo "   1. Run Coly immediately: source ${USER_BASHRC} && coly"
+echo "   2. Run ColyServer immediately: source ${USER_BASHRC} && ${SERVER_NEW_NAME}"
+echo "   3. Run in new terminal: coly / ${SERVER_NEW_NAME}"
 echo "========================================"
-echo "Core executable: ${OUTPUT_BIN}"
-echo "Service executable: ${SERVICE_BIN}"
-echo "Temp directory: ${TEMP_DIR}"
-echo "LanguageMap: ${SETTINGS_DIR}/LanguageMap_Linux.json"
-echo "Start service: coly-service"
-echo "Run Coly: ${OUTPUT_BIN}"
