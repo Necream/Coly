@@ -390,7 +390,7 @@ string CommandExecutor(string command,shared_ptr<ServerSession> client){
         return "Subprocess logged in";
     }
     cout<<"[ERROR]Unknown command: "<<command<<endl;
-    return "[ERROR]Unknown command"+command;
+    return "[ERROR]Unknown command: "+command;
 }
 
 int main(int argc, char* argv[]){

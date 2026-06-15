@@ -247,7 +247,9 @@ std::vector<std::string> operationlist = {
 std::vector<std::string> skipsynclist = {
     "Input",
     "InputLine",
-    "NoReg"
+    "NoReg",
+    "Size",
+    "ASCII"
 };
 // Structure to hold information about defined variables, codes, and positions
 // It includes type, name, language, content, code information, and variable type
@@ -255,6 +257,7 @@ struct defineinfo {
     std::string name; // name of the variable/code/positon
     std::string language; // language type, e.g., C++, Python, etc.
     std::string content; // content of the variable or code
+    std::vector<std::string> functioncontent; // for function, store the content of the function
     bool isprivate; // whether the variable or code is private
     defineinfo(){
         name = "";
@@ -287,6 +290,10 @@ struct defineinfo {
             std::string temp;
             std::cin>> content;
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        }else if(name == "Size"){
+            return std::to_string(content.size());
+        }else if(name == "ASCII"){
+            return GXPass::c12c2<char,std::string>((char)(GXPass::c12c2<std::string,int>(content)));
         }
         return content;
         return "ERROR: Undefined type";
@@ -298,6 +305,8 @@ std::map<std::string, int> definedposition;
 std::map<std::string, defineinfo> definedvar;
 // Map to store compiled codes
 std::map<std::string, bool> compiledcode;
+// Map to store defined codes
+std::map<std::string, defineinfo> definedfunction;
 std::string GetVarValue(std::string varname, NetworkSession& session){
     if(definedvar.find(varname) != definedvar.end()){
         return definedvar[varname].getvalue(session);
@@ -343,11 +352,24 @@ defineinfo judgedefine(std::string content, NetworkSession& session, bool &defin
     std::string varname="";
     std::string type="";
     std::string left="";
+    std::string functionname="";
     defining = true;
-    while(content.find("  ") != std::string::npos) content.replace(content.find("  "), 2, " ");
+    // Avoid replacing var/privatevar content
+    // while(content.find("  ") != std::string::npos) content.replace(content.find("  "), 2, " ");
     for(char c : content){
         if(c == ' '){
             infotype++;
+            if(infotype >= 5&&(type == "var"||type == "privatevar")){
+                left += c;
+            }
+            if(infotype == 1&&type == "function"){
+                if(!info.functioncontent.empty()) info.functioncontent.clear();
+            }
+            if(infotype >= 5&&type == "function"){
+                if(infotype >= 6) left = "define var named "+left+" with ";
+                else info.functioncontent.push_back(left);
+                left="";
+            }
             continue;
         }
         if(infotype == 0){// type
@@ -361,11 +383,20 @@ defineinfo judgedefine(std::string content, NetworkSession& session, bool &defin
             info.language += c;
         } else if(infotype >= 4&&(type == "var"||type == "privatevar")){// var value
             left+=c;
-        }else if(infotype ==5 && type == "code"){// |
+        }else if(infotype >= 4&&(type == "function")){// function content
+            left+=c;
+        }
+        else if(infotype ==5 && type == "code"){// |
         }else if(infotype==6 && type == "code"){
             left+=c;
         }
     }
+    if(infotype >= 4&&type == "function"){
+        if(infotype >= 5) left = "define var named "+left+" with ";
+        info.functioncontent.push_back(left);
+        left="";
+    }
+    if(type == "function") info.isprivate = true;
     if(type == "privatevar" || type == "privatecode") info.isprivate = true;
     for(std::string str:skipsynclist) if(str==info.name) info.isprivate = true;
     if(infotype==6 && type == "code"){
@@ -378,6 +409,9 @@ defineinfo judgedefine(std::string content, NetworkSession& session, bool &defin
         defining = false;
         overdefine=0;
         return defineinfo();
+    }else if(infotype >=4&&type == "function"){
+        definedfunction[info.name] = info;
+        defining = false;
     }
     if(!left.empty()){
         std::string value = getSyntaxValue(left, session);
@@ -389,7 +423,11 @@ defineinfo judgedefine(std::string content, NetworkSession& session, bool &defin
     return info;
 }
 // Get the file extension for a given language from LanguageMap.json
-std::string getextension(const std::string language) {
+std::string getextension(const std::string language, NetworkSession& session) {
+    std::string LanguageVarName = language + ":extension";
+    if(definedvar.find(LanguageVarName) != definedvar.end()){
+        return definedvar[LanguageVarName].getvalue(session);
+    }
     std::string LanguageJSONPath = COLYPATH;
     LanguageJSONPath+="Settings/LanguageMap.json";
     FILE *stream=fopen(LanguageJSONPath.c_str(), "r");
@@ -408,18 +446,23 @@ std::string getextension(const std::string language) {
         json = nlohmann::json::parse(fileinfo);
     } catch (const nlohmann::json::parse_error& e) {
         std::cout << "Error: JSON parse error: " << e.what() << std::endl;
-        return ""; // Default extension if parsing fails
+        return ".txt"; // Default extension if parsing fails
     }
     return json[language]["extension"].get<std::string>();
 }
 // Get the need of compile for a given language from LanguageMap.json
-bool getneedcompile(const std::string language) {
+bool getneedcompile(const std::string language, NetworkSession& session) {
+    std::string LanguageVarName = language + ":needcompile";
+    if(definedvar.find(LanguageVarName) != definedvar.end()){
+        std::string value = definedvar[LanguageVarName].getvalue(session);
+        return value == "true" || value == "1";
+    }
     std::string LanguageJSONPath = COLYPATH;
     LanguageJSONPath+="Settings/LanguageMap.json";
     FILE *stream=fopen(LanguageJSONPath.c_str(), "r");
     if (!stream) {
         std::cout << "Error: Cannot open LanguageMap.json" << std::endl;
-        return ".txt"; // Default extension if file cannot be opened
+        return false; // Default if file cannot be opened
     }
     int c=0;
     std::string fileinfo;
@@ -432,12 +475,16 @@ bool getneedcompile(const std::string language) {
         json = nlohmann::json::parse(fileinfo);
     } catch (const nlohmann::json::parse_error& e) {
         std::cout << "Error: JSON parse error: " << e.what() << std::endl;
-        return ""; // Default extension if parsing fails
+        return false; // Default if parsing fails
     }
     return json[language]["needcompile"].get<bool>();
 }
 // Get the compiler run command for a given language from LanguageMap.json
-std::string getcompilerun(const std::string language) {
+std::string getcompilerun(const std::string language, NetworkSession& session) {
+    std::string LanguageVarName = language + ":compilerun";
+    if(definedvar.find(LanguageVarName) != definedvar.end()){
+        return definedvar[LanguageVarName].getvalue(session);
+    }
     std::string LanguageJSONPath = COLYPATH;
     LanguageJSONPath+="Settings/LanguageMap.json";
     FILE *stream=fopen(LanguageJSONPath.c_str(), "r");
@@ -459,7 +506,11 @@ std::string getcompilerun(const std::string language) {
     return json[language]["compilerun"].get<std::string>();
 }
 // Get the run command for a given language from LanguageMap.json
-std::string getrun(const std::string language) {
+std::string getrun(const std::string language, NetworkSession& session) {
+    std::string LanguageVarName = language + ":run";
+    if(definedvar.find(LanguageVarName) != definedvar.end()){
+        return definedvar[LanguageVarName].getvalue(session);
+    }
     // std::co << "Getting run command for language: " << language << std::endl;
     std::string LanguageJSONPath = COLYPATH;
     LanguageJSONPath+="Settings/LanguageMap.json";
@@ -491,7 +542,7 @@ void usedefine(const std::string &content, NetworkSession& session, bool wait=tr
         return;
     }
     defineinfo info = definedvar[content];
-    std::string extension = getextension(info.language);
+    std::string extension = getextension(info.language, session);
     std::string filename = TempPATH;
     filename += GXPass::number2ABC(GXPass::compile(info.name))+"."+extension;
     FILE *fp = fopen(filename.c_str(), "wb");
@@ -503,9 +554,9 @@ void usedefine(const std::string &content, NetworkSession& session, bool wait=tr
     fclose(fp);
     std::string command = "";
     std::string codename = GXPass::number2ABC(GXPass::compile(info.name));
-    if((compiledcode.find(codename) != compiledcode.end() && compiledcode[codename]) || !getneedcompile(info.language)){
-        command=getrun(info.language); // If the code has been compiled, just run it
-    } else command=getcompilerun(info.language); // If the code has not been compiled, compile it first
+    if((compiledcode.find(codename) != compiledcode.end() && compiledcode[codename]) || !getneedcompile(info.language, session)){
+        command=getrun(info.language, session); // If the code has been compiled, just run it
+    } else command=getcompilerun(info.language, session); // If the code has not been compiled, compile it first
     size_t pos = command.find('$');
     while(pos != std::string::npos)command.replace(pos, 1, filename),pos = command.find('$');
     pos = command.find('^');
@@ -535,7 +586,7 @@ void usedefine(const std::string &content, NetworkSession& session, bool wait=tr
     // std::cout<< "Running command: " << command << std::endl;
     if(wait) system(command.c_str());
     else{
-        if((compiledcode.find(codename) != compiledcode.end() && compiledcode[codename]) || !getneedcompile(info.language)){
+        if((compiledcode.find(codename) != compiledcode.end() && compiledcode[codename]) || !getneedcompile(info.language, session)){
             RunCommand(command);
         }
     }
@@ -569,6 +620,37 @@ void addressline(const std::string &lineContent,int *lineid, NetworkSession& ses
             c != '\r'&&
             c != '\n') line += c;
     }
+    while(line[0] == ' ') line = line.substr(1);
+    /* Process function */
+    int firstspace=0;
+    while(firstspace<line.size()&&line[firstspace]!=' ') firstspace++;
+    if(firstspace<=line.size()){
+        std::string firstword = line.substr(0, firstspace);
+        if(definedfunction.find(firstword) != definedfunction.end()){
+            defineinfo info = definedfunction[firstword];
+            std::string content = "";
+            std::vector<std::string> args;
+            for(int i=firstspace+1;i<line.size();i++){
+                if(line[i] == ' '){
+                    args.push_back(content);
+                    content = "";
+                    continue;
+                }
+                content += line[i];
+            }
+            if(!content.empty()) args.push_back(content),content="";
+            for(int i=1;i<info.functioncontent.size();i++){
+                std::string content = info.functioncontent[i];
+                content+=args[i-1];
+                addressline(content, lineid, session);
+            }
+            content = info.functioncontent[0];
+            content="use "+content;
+            addressline(content, lineid, session);
+            return;
+        }
+    }
+    /* End of process function */
     static bool defining = false;
     bool overdefine=0;
     static defineinfo info;

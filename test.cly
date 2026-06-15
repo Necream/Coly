@@ -1,0 +1,7 @@
+define var named Call:extension with .txt
+define var named Call:run with start cmd
+define var named Call:compilerun with start notepad
+define var named Call:needcompile with true
+define code named 1 with Call
+use 1
+use 1

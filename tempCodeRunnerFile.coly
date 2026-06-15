@@ -1,0 +1,16 @@
+define var named Input
+define var named a with $Input
+define privatevar named i
+define position named loop
+define var named Size with $i
+ifn $Size $a define var named i with $i #
+ifn $Size $a jump loop
+define var named b with $Input
+define privatevar named i2
+define position named loop
+define var named Size with $i2
+ifn $Size $b define var named i2 with $i2 #
+ifn $Size $b jump loop
+define var named c with $i $i2
+define var named Size with $c
+print $Size

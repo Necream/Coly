@@ -1,4 +1,4 @@
-# Coly v1.5.3
+# Coly v1.9.2
 
 This document was edited in **Chinese**.
 
@@ -6,10 +6,9 @@ This document was edited in **Chinese**.
 
 ## 更新的内容
 
-我们在本次更新时修复了`Input`和`InputLine`在Linux下可能导致不可用的问题，原因是`'\r'`和`'\n'`没有被妥善处理。
-我们在本次更新时新增了`privatevar`和`privatecode`，不会被同步到**Server**，能够在不需要的时候显著提升运行速度。
-我们新增了`OnlyCompile`和`NoReg`变量，其中`NoReg`不会同步到`ColyVariableSyncService`。
-**请注意，如果你指定了`NoReg = true`，那么`OnlyCompile`也不会生效，因为`OnlyCompile`标记通过VariableSyncService传递。**
+- 本次更新修复了`define var/privatevar`变量内容跟随的空格消失的问题，但命令的判定标准更加严格。不过你按照文档写是没有问题的。
+- 本次更新新增了`[Language]:`系列变量，支持同步，具体用法后面写。
+- 本次更新新增了`Size`和`ASCII`两个功能变量，不可同步，具体用法后面写。
 
 ## 安装和使用
 
@@ -57,7 +56,14 @@ sudo chown nobody:nogroup /usr/local/share/Coly -R
 
 ## 更新日志
 
-- v1.3.2:我们在本次更新时修复了`if`的运行bug，更改了`if`的判定，提升了整体体验。新增了`OnlyCompile`和`NoReg`两个功能变量（上一个版本有`OnlyCompile`，但是没有说明）
+- 1.5.3:
+我们在本次更新时修复了`Input`和`InputLine`在Linux下可能导致不可用的问题，原因是`'\r'`和`'\n'`没有被妥善处理。
+我们在本次更新时新增了`privatevar`和`privatecode`，不会被同步到**Server**，能够在不需要的时候显著提升运行速度。
+我们新增了`OnlyCompile`和`NoReg`变量，其中`NoReg`不会同步到`ColyVariableSyncService`。
+**请注意，如果你指定了`NoReg = true`，那么`OnlyCompile`也不会生效，因为`OnlyCompile`标记通过VariableSyncService传递。**
+
+- v1.3.2:
+- 我们在本次更新时修复了`if`的运行bug，更改了`if`的判定，提升了整体体验。新增了`OnlyCompile`和`NoReg`两个功能变量（上一个版本有`OnlyCompile`，但是没有说明）
 
 ## Coly语言
 
@@ -200,6 +206,7 @@ For more information about Coly - including syntax and available features - plea
 ##### Input InputLine
 
 `$Input`和`$InputLine`能够获取用户的输入，但`$Input`仅获取到下一个空格或换行，而`$InputLine`一直获取到换行。
+请注意，`Input`只是可以参考C++中`cin`的用法，并不完全相同。在每次输入完之后，你需要回车而不是空格。
 用法示例
 ```Coly
 #初始定义两个变量
@@ -228,12 +235,84 @@ define var named NULL with $InputLine
 `NoReg`有两种模式，未定义时默认是`false`。
 如果`NoReg`是`true`，启动代码块时不会为代码块注册，也就意味着代码块无法链接到ColyServer，也无法操作Coly变量，但是可以避免登陆凭证的无效注册，也可以提高代码块的运行速度。
 
+##### Size
+
+`Size`是一个用来获取var长度的一个功能变量，使用方法是先`define var named Size with ...`，然后调用时写`$Size`。
+为了保证稳定，`Size`不会参与同步。请你在每次调用之前使用一次定义为`Size`赋值，但一次赋值的`Size`可以多次使用。
+例如：
+```cly
+#这是一个简单的加法运算演示
+define var named Input
+define var named a with $Input
+#请注意，如果你要创建空变量，请使用privatevar。为了流畅度考虑，空的var不会同步到server。
+define privatevar named i
+define position named loop
+define var named Size with $i
+ifn $Size $a define var named i with $i #
+ifn $Size $a jump loop
+define var named b with $Input
+define privatevar named i2
+define position named loop
+define var named Size with $i2
+ifn $Size $b define var named i2 with $i2 #
+ifn $Size $b jump loop
+define var named c with $i $i2
+define var named Size with $c
+print $Size
+```
+
+##### ASCII
+
+`ASCII`允许你为其赋值并获取该ASCII值对应的字符。请注意，你必须使用数字进行输入。
+例如：
+```cly
+define var named ASCII with 65
+print $ASCII
+#应输出A
+```
+
+##### [Language]:
+
+该系列的功能变量的作用是在内存中代替`LanguageMap.json`中的设置。因为是覆盖设置，所以你不能通过这个变量来读取设置。
+
+###### [Language]:needcompile
+
+该变量定义了你的语言需不需要进行编译，赋值应为`true`或`false`。
+无论是解释型变量还是编译型变量，你都需要定义这个。
+
+###### [Language]:extension
+
+该变量定义了你的语言的扩展名形式。
+如果你只是想用`[Language]:`系列变量调用系统命令，也请定义此变量。
+
+###### [Language]:compilerun
+
+该变量定义了你的语言编译并运行所需的命令。
+
+###### [Language]:run
+
+该变量定义了你的语言运行所需的命令。 **请注意，如果是解释型语言，请使用这个变量。如果你使用编译型变量，为了性能优化，你也需要定义这个变量。**
+
+内容示例
+```cly
+#定义语言内容
+define var named Call:needcompile with true
+define var named Call:extension with .txt
+define var named Call:run with start cmd
+define var named Call:compilerun with start notepad
+#你必须要定义一个代码块使用你定义的语言类型
+define code named 1 with Call
+#第一次调用notepad，使用compilerun
+use 1
+#调用cmd，因为Coly的性能优化，使用run
+use 1
+```
 
 #### if ifn
 
 `if`和`ifn`是**新增内容**。
 `if`和`ifn`能够在Coly中判断两个变量是否相等。如果相等，`if`会执行后方的`code`，`ifn`则不会.若不相等则反之。
-**请注意，`type`分别为`code`和`var`的变量不影响比较。**
+**请注意，`type`分别为`code`和`var`的变量不影响比较。其中比较的两个内容必须是变量，如果要和常量比较请先定义`privatevar`。**
 用法
 ```Coly
 if $var1 $var2 [Coly Code]
