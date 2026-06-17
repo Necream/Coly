@@ -1,4 +1,4 @@
-# Coly v1.9.2
+# Coly v1.9.3
 
 This document was edited in **Chinese**.
 
@@ -9,6 +9,7 @@ This document was edited in **Chinese**.
 - 本次更新修复了`define var/privatevar`变量内容跟随的空格消失的问题，但命令的判定标准更加严格。不过你按照文档写是没有问题的。
 - 本次更新新增了`[Language]:`系列变量，支持同步，具体用法后面写。
 - 本次更新新增了`Size`和`ASCII`两个功能变量，不可同步，具体用法后面写。
+- 本次更新修复了Coly在创建subprocess时同一毫秒内创建相同的`subprocessID`导致无法启动子进程的问题。
 
 ## 安装和使用
 
@@ -131,6 +132,16 @@ Coly注释的语法与Python大体一致，**但不支持Python的多行注释**
 在`define code`的内容中，你需要在每一行前加上`|`来区分内容。**请注意，你必须加在行首，这里Coly不会自动忽略你的空格。**
 
 从**v1.5.3**开始，Coly支持`privatecode`和`privatevar`两个新类型，用法和`code`和`var`一样，但是不会同步到`ColyVariableSyncService`。
+
+从**v1.9.3**开始，Coly支持`function`的新类型，支持创建自定义命令，也可以覆盖现有命令。请注意，一旦覆盖了现有命令，在此程序的后续代码中你将不能使用现有命令。作用域限制在自身进程，代码块进程不受影响，即使在重载之后。
+例如：
+```cly
+define code named YourCodeName with Coly
+|print $var
+define function named YourFunction with YourCodeName var
+YourFunction 123
+#输出为123
+```
 
 #### use
 

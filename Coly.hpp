@@ -564,8 +564,10 @@ void usedefine(const std::string &content, NetworkSession& session, bool wait=tr
     compiledcode[codename] = true; // Mark the code as compiled
     while(pos != std::string::npos) command.replace(pos, 1, outputfilepath),pos = command.find('^');
     pos = command.find('*');
+    static int num=0;
+    std::string sessiondata(reinterpret_cast<const char*>(&session),sizeof(session));
     static std::string RunProof=GXPass::c12c2<int,std::string>(time(0));
-    RunProof = GXPass::number2ABC(GXPass::compile(RunProof));
+    RunProof = GXPass::number2ABC(GXPass::compile(RunProof)+"_"+GXPass::compile(sessiondata));
     while(pos != std::string::npos) command.replace(pos, 1, RunProof),pos = command.find('*');
     std::string regcommand = "reg subprocess ";
     regcommand += RunProof;
