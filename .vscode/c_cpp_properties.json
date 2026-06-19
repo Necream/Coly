@@ -12,8 +12,7 @@
                 "E:/Windows Kits/10/Include/10.0.26100.0/ucrt",
                 "E:/Windows Kits/10/Include/10.0.26100.0/shared",
                 "E:/Windows Kits/10/Include/10.0.26100.0/um",
-                "E:/Windows Kits/10/Include/10.0.26100.0/winrt",
-                "C:/vcpkg/installed/x64-windows/include"
+                "E:/Windows Kits/10/Include/10.0.26100.0/winrt"
             ],
             "defines": []
         }
