@@ -5,7 +5,6 @@
 #include <string>
 #include "./VariableSyncService.hpp"
 #include "./json.hpp"
-#include "./GXPass.hpp"
 
 using JSON = nlohmann::json;
 

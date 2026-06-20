@@ -1,4 +1,4 @@
-# Coly v1.9.3
+# Coly v2.0.0
 
 This document was edited in **Chinese**.
 
@@ -6,10 +6,7 @@ This document was edited in **Chinese**.
 
 ## 更新的内容
 
-- 本次更新修复了`define var/privatevar`变量内容跟随的空格消失的问题，但命令的判定标准更加严格。不过你按照文档写是没有问题的。
-- 本次更新新增了`[Language]:`系列变量，支持同步，具体用法后面写。
-- 本次更新新增了`Size`和`ASCII`两个功能变量，不可同步，具体用法后面写。
-- 本次更新修复了Coly在创建subprocess时同一毫秒内创建相同的`subprocessID`导致无法启动子进程的问题。
+- 更新了Python语言自动同步的支持
 
 ## 安装和使用
 
@@ -56,6 +53,12 @@ sudo chown nobody:nogroup /usr/local/share/Coly -R
 请注意，`ColyVariableSyncService`不会加密你的数据。所以如果有数据保护的需求请更改代码删掉所有的输出，不影响**Client**的功能。
 
 ## 更新日志
+
+- 1.9.3:
+本次更新修复了`define var/privatevar`变量内容跟随的空格消失的问题，但命令的判定标准更加严格。不过你按照文档写是没有问题的。
+本次更新新增了`[Language]:`系列变量，支持同步，具体用法后面写。
+本次更新新增了`Size`和`ASCII`两个功能变量，不可同步，具体用法后面写。
+本次更新修复了Coly在创建subprocess时同一毫秒内创建相同的`subprocessID`导致无法启动子进程的问题。
 
 - 1.5.3:
 我们在本次更新时修复了`Input`和`InputLine`在Linux下可能导致不可用的问题，原因是`'\r'`和`'\n'`没有被妥善处理。
@@ -319,6 +322,12 @@ use 1
 use 1
 ```
 
+###### 代码文件参数
+
+- `$`: 代表源代码文件的完整路径
+- `^`: 代表源代码文件去掉扩展名之后的完整路径
+- `*`: 代表`subprocessid`，支持Coly自动同步的变量依赖此进行subprocess的注册。
+
 #### if ifn
 
 `if`和`ifn`是**新增内容**。
@@ -358,6 +367,7 @@ commitvaroperation reg subprocess 123
 ##### 所有的请求
 
 下面是可用指令的树结构，使用方法是从树根节点开始向下延伸直到子节点**再加上备注的信息。**
+如果你想要测试手动请求，你可以使用`commitvaroperation.cly`中测试。
 
 - set
     - var *JSON，格式详见下方VarContainer说明*
@@ -450,3 +460,54 @@ get var 123
 ### ReadColyVar(varname)
 
 可以允许你从Server中以只读方式读取数据，之后你可以使用`varname`进行字符串操作。你可以通过隐式转换为`std::string`，之后可以赋值给`ColyVariable`，可以弥补`RegColyVar()`的缺陷。
+
+例如：
+```cpp
+#include <iostream>
+#include <string>
+// 把这个头文件提前添加到环境变量或者使用绝对路径
+#include <ColyCppSync.hpp>
+using namespace std;
+int main(int argc,char* argv[]){
+    InitColySyncService();
+    RegColyVar(A);
+    A="1234567890";
+    cout<<string(A)<<endl;
+    return 0;
+}
+```
+
+## Python
+
+我们在v1.0.0版本中更新了针对于Python写出的运行库，你一共需要明白下面的一个类型。
+
+### ColySyncString
+
+这是Python可以直接连接到Coly的变量，任何支持的操作都会自动同步数据。如果需要高性能操作，请使用string。
+
+#### RegColyVar(varname)
+
+这个函数能够使你注册一个名字为`varname`的`ColyVar`。
+使用方法具体是`A = RegColyVar("A")`
+
+#### ReadColyVar(varname)
+
+这个函数能够使你读取已有的`ColyVar`。
+请注意函数返回的类型不是`string`，是一个只读类型，修改不会影响`ColyServer`中的值。
+
+### InitColySyncService(argv)
+
+这个函数可以使你连接到`ColyServer`并进行变量操作。
+
+
+例如：
+```py
+import sys
+argv=sys.argv
+if len(argv)<2 :
+  exit()
+if InitColySyncService(argv)==0 :
+  exit()  # OnlyCompile的兼容
+A = RegColyVar("A")
+A = "Hello Coly Server!"
+```

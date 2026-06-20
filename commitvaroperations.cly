@@ -1,0 +1,5 @@
+define var named InputLine
+define position named loop
+define privatevar named operation with $InputLine
+do $operation
+jump loop

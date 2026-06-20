@@ -1,0 +1,5 @@
+import socket
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+err = s.connect_ex(("127.0.0.1", 12345))
+print("connect_ex =", err)
