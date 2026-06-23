@@ -7,11 +7,13 @@ Translated by **DeepSeek V4 Pro**
 
 ## Update Highlights
 
-- Fixed the issue where the Python module was inconvenient to load. You can now load it using the method described below.
+- Fixed an issue where Python code blocks under the `OnlyCompile` flag would fail to exit, instead returning a connection failure signal.
 
 ## Installation & Deployment
 
 Please use the installation script, or perform manual installation following the directory structure outlined below.
+For all supported systems, you need to install the `ColyPythonSync` library.
+Execute `pip install .` in the `./LanguageSyncLib/ColyPythonSync/` directory of this project.
 
 ### Linux Directory Layout
 Create the following folders under `/lib/` on Linux systems:
@@ -56,6 +58,9 @@ Create the following folders under the root `C:\` drive on Windows systems:
 - `ColyVariableSyncService` does **not** encrypt your data. If data protection is required, edit the source code to remove all output logic—this will not affect **client** functionality.
 
 ## Changelog
+
+- 2.0.1
+Fixed the issue where the Python module was inconvenient to load. You can now load it using the method described below.
 
 - 2.0.0
 Added Python language auto-sync support

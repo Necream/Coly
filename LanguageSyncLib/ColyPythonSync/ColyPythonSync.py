@@ -209,6 +209,6 @@ def InitColySyncService(argv: list[str]) -> int:
     only_compile = ReadColyVar("OnlyCompile")
 
     if str(only_compile) == "true":
-        return 0
+        exit()
 
     return 1

@@ -6,7 +6,7 @@ This document was edited in **Chinese**.
 
 ## 更新的内容
 
-- 修复了Python模块不便于加载的问题，现在你可以通过下面的方法加载。
+- 修复了Python在`OnlyCompile`标记下无法退出而是导致返回连接失败信号的问题
 
 ## 安装和使用
 
@@ -55,6 +55,9 @@ sudo chown nobody:nogroup /usr/local/share/Coly -R
 请注意，`ColyVariableSyncService`不会加密你的数据。所以如果有数据保护的需求请更改代码删掉所有的输出，不影响**Client**的功能。
 
 ## 更新日志
+
+- 2.0.1
+修复了Python模块不便于加载的问题，现在你可以通过下面的方法加载。
 
 - 2.0.0
 更新了Python语言自动同步的支持
