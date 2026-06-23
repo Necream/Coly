@@ -1,4 +1,4 @@
-# Coly v2.0.0
+# Coly v2.0.1
 
 This document was edited in **Chinese**.
 
@@ -6,11 +6,13 @@ This document was edited in **Chinese**.
 
 ## 更新的内容
 
-- 更新了Python语言自动同步的支持
+- 修复了Python模块不便于加载的问题，现在你可以通过下面的方法加载。
 
 ## 安装和使用
 
 请你使用安装脚本，或者按照下面的结构手动安装。
+对于支持的所有系统，你需要安装`ColyPythonSync`库。
+在本项目的`./LanguageSyncLib/ColyPythonSync/`的文件夹中执行`pip install .`
 
 你需要在`Linux`的`/lib/`中创建的文件夹按下面描述的所示
 - **/lib/**
@@ -53,6 +55,9 @@ sudo chown nobody:nogroup /usr/local/share/Coly -R
 请注意，`ColyVariableSyncService`不会加密你的数据。所以如果有数据保护的需求请更改代码删掉所有的输出，不影响**Client**的功能。
 
 ## 更新日志
+
+- 2.0.0
+更新了Python语言自动同步的支持
 
 - 1.9.3:
 本次更新修复了`define var/privatevar`变量内容跟随的空格消失的问题，但命令的判定标准更加严格。不过你按照文档写是没有问题的。
@@ -480,6 +485,7 @@ int main(int argc,char* argv[]){
 ## Python
 
 我们在v1.0.0版本中更新了针对于Python写出的运行库，你一共需要明白下面的一个类型。
+如果你想要加载同步库，你需要在`./LanguageSyncLib/ColyPythonSync/`的文件夹中执行`pip install .`
 
 ### ColySyncString
 
@@ -503,6 +509,7 @@ int main(int argc,char* argv[]){
 例如：
 ```py
 import sys
+from ColyPythonSync import InitColySyncService,RegColyVar
 argv=sys.argv
 if len(argv)<2 :
   exit()

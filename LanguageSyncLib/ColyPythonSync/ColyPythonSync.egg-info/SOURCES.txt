@@ -1,0 +1,6 @@
+ColyPythonSync.py
+pyproject.toml
+ColyPythonSync.egg-info/PKG-INFO
+ColyPythonSync.egg-info/SOURCES.txt
+ColyPythonSync.egg-info/dependency_links.txt
+ColyPythonSync.egg-info/top_level.txt

@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ColyPythonSync"
+version = "1.0.0"
+description = "Python client library for the Coly variable synchronization server"
+requires-python = ">=3.8"
+authors = [{name = "Necream"}]
+
+[tool.setuptools]
+py-modules = ["ColyPythonSync"]
