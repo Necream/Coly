@@ -7,7 +7,7 @@ import json
 import time
 import socket
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 
 # =========================
@@ -209,6 +209,6 @@ def InitColySyncService(argv: list[str]) -> int:
     only_compile = ReadColyVar("OnlyCompile")
 
     if str(only_compile) == "true":
-        return 0
+        exit()
 
     return 1
