@@ -1,4 +1,4 @@
-# Coly v2.0.1
+# Coly v2.0.3
 
 This document was edited in **Chinese**.
 
@@ -6,7 +6,9 @@ This document was edited in **Chinese**.
 
 ## 更新的内容
 
-- 修复了Python在`OnlyCompile`标记下无法退出而是导致返回连接失败信号的问题
+- 将C++代码块库中连接ColyServer的地址从`localhost`改为`127.0.0.1`，能缩短2s左右的延迟。
+- 添加了C++代码块库的异常处理，现在不必在调用C++代码块之前`define var named OnlyCompile with false`
+- 更改了默认的Windows编译指令，现在你可以直接`#include <ColyCppSync.hpp>`
 
 ## 安装和使用
 
@@ -20,11 +22,13 @@ This document was edited in **Chinese**.
     - **Settings/**
       - **LanguageMap.json（请手动拷贝LanguageMap_Linux.json）**
     - **VariableSyncService/**
-      - **server（你可以自己改名，可以开机自启动，但是要求在Coly启动之前必须启动）**
+      - **ColyServer**
     - **VariableSyncLib/（存储了你编写C++代码块时需要用的库，采用了标准的ColyVariableSyncService接口，使用时include "ColyCppSync.hpp"）**
       - **json.hpp**
       - **GXPass.hpp**
       - **NCInt.hpp**
+      - **ColyCppSync.hpp**
+      - **VariableSyncService.hpp**
       - **asio.hpp**
       - **asio/**
 
@@ -42,25 +46,33 @@ sudo chown nobody:nogroup /usr/local/share/Coly -R
     - **TempCode\\**
     - **InteractiveColy.cly（如果你不需要可以不拷贝，但是如果你不拷贝这个文件在无命令行启动时会出现错误并且无法启动）**
     - **VariableSyncService\\**
-      - **server.exe（你可以自己改名，可以开机自启动，但是要求在Coly启动之前必须启动）**
+      - **ColyServer.exe**
     - **VariableSyncLib\\（存储了你编写C++代码块时需要用的库，采用了标准的ColyVariableSyncService接口，使用时include "ColyCppSync.hpp"）**
       - **json.hpp**
       - **GXPass.hpp**
+      - **ColyCppSync.hpp**
       - **NCInt.hpp**
+      - **VariableSyncService.hpp**
       - **asio.hpp**
       - **asio\\**
 
 请注意，**Coly**采用了**MSVC**编译工具链，所以`LanguageMap_Windows.json`中使用的是`cl.exe`，如果你需要使用`g++`需要自定更改命令。
+如果你需要使用MSVC编译工具链，你需要配置以下的环境变量。**请按照你的实际路径更改**
+- 系统变量`INCLUDE`: `C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\cppwinrt;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\shared;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\ucrt;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\winrt;`
+- 系统变量`LIB`: `C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\lib;C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\lib\onecore\x64;C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\um\x64;C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\ucrt\x64;`
+- 用户变量`Path`: `C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\bin\Hostx64\x64`
 
 请注意，`ColyVariableSyncService`不会加密你的数据。所以如果有数据保护的需求请更改代码删掉所有的输出，不影响**Client**的功能。
 
 ## 更新日志
 
+
 - 2.0.1
-修复了Python模块不便于加载的问题，现在你可以通过下面的方法加载。
+修复了Python在`OnlyCompile`标记下无法退出而是导致返回连接失败信号的问题
 
 - 2.0.0
 更新了Python语言自动同步的支持
+修复了Python模块不便于加载的问题，现在你可以通过下面描述的方法加载。
 
 - 1.9.3:
 本次更新修复了`define var/privatevar`变量内容跟随的空格消失的问题，但命令的判定标准更加严格。不过你按照文档写是没有问题的。

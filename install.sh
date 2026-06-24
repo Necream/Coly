@@ -1,123 +1,129 @@
 #!/bin/bash
 set -e
 
-# ===================== 核心配置（通用，无需改） =====================
+# ===================== Core Configuration =====================
 CURRENT_DIR=$(pwd)
 COLY_ROOT="/lib/Coly"
+SETTINGS_DIR="${COLY_ROOT}/Settings"
 SERVICE_DIR="${COLY_ROOT}/VariableSyncService"
+LIB_DIR="${COLY_ROOT}/VariableSyncLib"
 TEMP_DIR="/usr/local/share/Coly/TempCode"
-# Server重命名为ColyServer
 SERVER_NEW_NAME="ColyServer"
-# 需要复制的配置文件（添加你的InteractiveColy.cly）
 CONFIG_FILE="InteractiveColy.cly"
+LANGSYNC_DIR="${CURRENT_DIR}/LanguageSyncLib"
 
-# 关键：获取真正的登录用户（即使sudo运行，也能拿到原用户）
 REAL_USER=$(logname 2>/dev/null || echo $SUDO_USER)
-# 兜底：如果以上都获取不到，用当前用户
 if [ -z "${REAL_USER}" ]; then
     REAL_USER=$(whoami)
 fi
-# 登录用户的家目录
 USER_HOME="/home/${REAL_USER}"
-# 登录用户的bashrc路径
 USER_BASHRC="${USER_HOME}/.bashrc"
-# PATH配置项（同时添加Coly和ColyServer的目录）
 COLY_PATH_ENTRY="export PATH=\"\$PATH:${COLY_ROOT}:${SERVICE_DIR}\""
 
-# ===================== 1. 安装系统依赖 =====================
-echo "Step 1/6: Installing system dependencies..."
+# ===================== 1. Install Dependencies =====================
+echo "Step 1/8: Installing system dependencies..."
 apt update -y > /dev/null 2>&1
-apt install -y g++ python3 > /dev/null 2>&1
-echo "✅ System dependencies installed (g++/python3 only)."
+apt install -y g++ python3 python3-pip > /dev/null 2>&1
+echo "System dependencies installed (g++, python3)."
 
-# ===================== 2. 创建目标目录 =====================
-echo "Step 2/6: Creating target directories..."
-mkdir -p "${COLY_ROOT}" "${SERVICE_DIR}" "${TEMP_DIR}"
-chmod 777 "${COLY_ROOT}" "${SERVICE_DIR}" "${TEMP_DIR}" -R
-echo "✅ Target directories created: ${COLY_ROOT}, ${SERVICE_DIR}"
+# ===================== 2. Create Target Directories =====================
+echo "Step 2/8: Creating target directories..."
+mkdir -p "${COLY_ROOT}" "${SETTINGS_DIR}" "${SERVICE_DIR}" "${LIB_DIR}" "${TEMP_DIR}"
+echo "Target directories created."
 
-# ===================== 3. 本地编译 =====================
-echo "Step 3/6: Compiling in current directory (${CURRENT_DIR})..."
-
-# 3.1 编译Coly.cpp
-if [ -f "${CURRENT_DIR}/Coly.cpp" ]; then
-    g++ -std=c++20 -I. "${CURRENT_DIR}/Coly.cpp" -o "${CURRENT_DIR}/coly" -lpthread
-    chmod 777 "${CURRENT_DIR}/coly"
-    echo "✅ Compiled: Coly.cpp → ${CURRENT_DIR}/coly"
-else
-    echo "❌ Error: Coly.cpp not found in current directory!"
+# ===================== 3. Check Source Files =====================
+echo "Step 3/8: Checking source files..."
+if [ ! -f "${CURRENT_DIR}/Coly.cpp" ]; then
+    echo "Error: Coly.cpp not found!"
     exit 1
 fi
-
-# 3.2 编译server.cpp（本地仍为server，复制时重命名）
-if [ -f "${CURRENT_DIR}/server.cpp" ]; then
-    g++ -std=c++20 -I. "${CURRENT_DIR}/server.cpp" -o "${CURRENT_DIR}/server" -lpthread
-    chmod 777 "${CURRENT_DIR}/server"
-    echo "✅ Compiled: server.cpp → ${CURRENT_DIR}/server"
-else
-    echo "❌ Error: server.cpp not found in current directory!"
+if [ ! -f "${CURRENT_DIR}/server.cpp" ]; then
+    echo "Error: server.cpp not found!"
     exit 1
 fi
+if [ ! -f "${CURRENT_DIR}/${CONFIG_FILE}" ]; then
+    echo "Error: ${CONFIG_FILE} not found!"
+    exit 1
+fi
+echo "All source files found."
 
-# ===================== 4. 复制编译产物（重命名Server为ColyServer） =====================
-echo "Step 4/6: Copying binaries to target directory..."
-# 复制Coly
+# ===================== 4. Compile =====================
+echo "Step 4/8: Compiling with g++ (C++20)..."
+g++ -std=c++20 -I. "${CURRENT_DIR}/Coly.cpp" -o "${CURRENT_DIR}/coly" -lpthread
+chmod 777 "${CURRENT_DIR}/coly"
+echo "Compiled: coly"
+
+g++ -std=c++20 -I. "${CURRENT_DIR}/server.cpp" -o "${CURRENT_DIR}/server" -lpthread
+chmod 777 "${CURRENT_DIR}/server"
+echo "Compiled: server"
+
+# ===================== 5. Copy Binaries =====================
+echo "Step 5/8: Copying binaries..."
 cp -f "${CURRENT_DIR}/coly" "${COLY_ROOT}/"
-echo "✅ Copied: coly → ${COLY_ROOT}/coly"
-# 复制并将server重命名为ColyServer
 cp -f "${CURRENT_DIR}/server" "${SERVICE_DIR}/${SERVER_NEW_NAME}"
+chmod 777 "${COLY_ROOT}/coly"
 chmod 777 "${SERVICE_DIR}/${SERVER_NEW_NAME}"
-echo "✅ Copied & renamed: server → ${SERVICE_DIR}/${SERVER_NEW_NAME}"
+echo "Copied: coly, ${SERVER_NEW_NAME}"
 
-# ===================== 5. 复制配置文件（关键：添加InteractiveColy.cly） =====================
-echo "Step 5/6: Copying configuration file (${CONFIG_FILE})..."
-if [ -f "${CURRENT_DIR}/${CONFIG_FILE}" ]; then
-    # 复制到coly的运行目录（/lib/Coly），和报错路径一致
-    cp -f "${CURRENT_DIR}/${CONFIG_FILE}" "${COLY_ROOT}/"
-    chmod 777 "${COLY_ROOT}/${CONFIG_FILE}"
-    echo "✅ Copied: ${CONFIG_FILE} → ${COLY_ROOT}/${CONFIG_FILE}"
+# ===================== 6. Copy Libraries =====================
+echo "Step 6/8: Copying VariableSyncLib headers..."
+
+if [ -f "${LANGSYNC_DIR}/json.hpp" ]; then cp -f "${LANGSYNC_DIR}/json.hpp" "${LIB_DIR}/"; fi
+if [ -f "${LANGSYNC_DIR}/GXPass.hpp" ]; then cp -f "${LANGSYNC_DIR}/GXPass.hpp" "${LIB_DIR}/"; fi
+if [ -f "${LANGSYNC_DIR}/ColyCppSync.hpp" ]; then cp -f "${LANGSYNC_DIR}/ColyCppSync.hpp" "${LIB_DIR}/"; fi
+if [ -f "${LANGSYNC_DIR}/VariableSyncService.hpp" ]; then cp -f "${LANGSYNC_DIR}/VariableSyncService.hpp" "${LIB_DIR}/"; fi
+if [ -f "${CURRENT_DIR}/NCInt.hpp" ]; then cp -f "${CURRENT_DIR}/NCInt.hpp" "${LIB_DIR}/"; fi
+if [ -f "${CURRENT_DIR}/asio.hpp" ]; then cp -f "${CURRENT_DIR}/asio.hpp" "${LIB_DIR}/"; fi
+if [ -d "${CURRENT_DIR}/asio" ]; then
+    mkdir -p "${LIB_DIR}/asio"
+    cp -rf "${CURRENT_DIR}/asio/"* "${LIB_DIR}/asio/"
+fi
+chmod 777 -R "${LIB_DIR}"
+echo "Copied: VariableSyncLib headers"
+
+# ===================== 7. Copy Config =====================
+echo "Step 7/8: Copying configuration files..."
+
+if [ -f "${CURRENT_DIR}/Settings/LanguageMap_Linux.json" ]; then
+    cp -f "${CURRENT_DIR}/Settings/LanguageMap_Linux.json" "${SETTINGS_DIR}/LanguageMap.json"
+    echo "Copied: LanguageMap.json (from LanguageMap_Linux.json)"
+fi
+
+cp -f "${CURRENT_DIR}/${CONFIG_FILE}" "${COLY_ROOT}/"
+chmod 777 "${COLY_ROOT}/${CONFIG_FILE}"
+echo "Copied: ${CONFIG_FILE}"
+
+# ===================== 8. Set Permissions and Install Python Package =====================
+echo "Step 8/8: Setting permissions and installing ColyPythonSync..."
+
+chmod 777 -R "${TEMP_DIR}"
+chown nobody:nogroup -R "/usr/local/share/Coly"
+
+if [ -f "${LANGSYNC_DIR}/ColyPythonSync/pyproject.toml" ]; then
+    pip3 install "${LANGSYNC_DIR}/ColyPythonSync" 2>/dev/null || pip install "${LANGSYNC_DIR}/ColyPythonSync"
+    echo "ColyPythonSync installed."
 else
-    echo "❌ Error: ${CONFIG_FILE} not found in current directory!"
-    exit 1
+    echo "Warning: ColyPythonSync package not found, skipping."
 fi
 
-# ===================== 6. 配置登录用户的PATH（包含ColyServer目录） =====================
-echo "Step 6/6: Configuring PATH for user '${REAL_USER}'..."
-
-# 检查用户bashrc是否存在
-if [ ! -f "${USER_BASHRC}" ]; then
-    echo "ℹ️ Creating ${USER_BASHRC} for user '${REAL_USER}'..."
-    touch "${USER_BASHRC}"
-    chown "${REAL_USER}:${REAL_USER}" "${USER_BASHRC}"
-fi
-
-# 检查PATH是否已配置，避免重复添加
-if ! grep -qxF "${COLY_PATH_ENTRY}" "${USER_BASHRC}"; then
-    # 添加到用户bashrc（同时包含Coly和ColyServer的目录）
+# Configure PATH
+if ! grep -qxF "${COLY_PATH_ENTRY}" "${USER_BASHRC}" 2>/dev/null; then
     echo "${COLY_PATH_ENTRY}" >> "${USER_BASHRC}"
-    # 修复文件所有者（避免sudo导致文件归root）
     chown "${REAL_USER}:${REAL_USER}" "${USER_BASHRC}"
-    echo "✅ Added ${COLY_ROOT} and ${SERVICE_DIR} to PATH (${USER_BASHRC})"
-    # 临时生效当前会话（普通用户）
+    echo "Added Coly directories to PATH (${USER_BASHRC})"
     export PATH="$PATH:${COLY_ROOT}:${SERVICE_DIR}"
 else
-    echo "ℹ️ PATH already contains ${COLY_ROOT} and ${SERVICE_DIR} for user '${REAL_USER}' (skipping)"
+    echo "PATH already configured (skipping)"
 fi
 
-# ===================== 完成提示（通用） =====================
-echo -e "\n========================================"
-echo "🎉 Build & Install Success!"
+# ===================== Complete =====================
+echo ""
 echo "========================================"
-echo "🔧 User Info:"
-echo "   - Installed for user: ${REAL_USER}"
-echo "   - User home directory: ${USER_HOME}"
-echo "🔧 File Info:"
-echo "   - Local binaries: ${CURRENT_DIR}/coly, ${CURRENT_DIR}/server"
-echo "   - Installed to: ${COLY_ROOT}/coly (run: coly)"
-echo "   - Installed to: ${SERVICE_DIR}/${SERVER_NEW_NAME} (run: ${SERVER_NEW_NAME})"
-echo "   - Config file: ${COLY_ROOT}/${CONFIG_FILE}"
-echo "💡 How to use (for user '${REAL_USER}'):"
-echo "   1. Run Coly immediately: source ${USER_BASHRC} && coly"
-echo "   2. Run ColyServer immediately: source ${USER_BASHRC} && ${SERVER_NEW_NAME}"
-echo "   3. Run in new terminal: coly / ${SERVER_NEW_NAME}"
+echo "Coly v2.0.3 Install Success!"
+echo "========================================"
+echo "User: ${REAL_USER}"
+echo "Installed to: ${COLY_ROOT}"
+echo "Run: coly"
+echo "Server: ${SERVER_NEW_NAME}"
+echo "To use immediately: source ${USER_BASHRC}"
 echo "========================================"

@@ -34,9 +34,14 @@ struct ColyGetString{
         return data;
     }
     ColyGetString(const std::string& varname){
-        JSON j = JSON::parse(get_variable(varname));
-        this->varname = varname;
-        this->data = j["Value"];
+        std::string raw = get_variable(varname);
+        try{
+            JSON j = JSON::parse(raw);
+            this->varname = varname;
+            this->data = j["Value"];
+        }catch(...){
+            this->data = raw;
+        }
     };
 };
 struct ColySyncString{
@@ -140,5 +145,5 @@ std::string sync_variable(const ColySyncString* var) {
 }
 #define RegColyVar(varname) ColySyncString varname(#varname, "")
 #define ReadColyVar(varname) ColyGetString varname(#varname)
-#define InitColySyncService() do{if(argc<2){return 0;}else{ColyProcessID=argv[1];is_connected = connect_to_server(*session, "localhost", "12345");RegEcho = send_message(*session, "login subprocess " + ColyProcessID);}ReadColyVar(OnlyCompile);if(OnlyCompile.data=="true"){return 0;}}while(0)
+#define InitColySyncService() do{if(argc<2){return 0;}else{ColyProcessID=argv[1];is_connected = connect_to_server(*session, "127.0.0.1", "12345");RegEcho = send_message(*session, "login subprocess " + ColyProcessID);}ReadColyVar(OnlyCompile);if(OnlyCompile.data=="true"){return 0;}}while(0)
 #endif // COLY_CPP_SYNC_HPP

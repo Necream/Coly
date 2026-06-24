@@ -1,123 +1,145 @@
 @echo off
 setlocal enabledelayedexpansion
 
-:: ===================== 核心配置（不修改源码） =====================
-set CURRENT_DIR=%cd%          :: 当前编译目录（你的源码目录）
-set COLY_ROOT=C:\Coly         :: 目标安装目录
+:: ===================== Core Configuration =====================
+set CURRENT_DIR=%cd%
+set COLY_ROOT=C:\Coly
+set SETTINGS_DIR=%COLY_ROOT%\Settings
 set SERVICE_DIR=%COLY_ROOT%\VariableSyncService
+set LIB_DIR=%COLY_ROOT%\VariableSyncLib
 set TEMP_DIR=%COLY_ROOT%\TempCode
-set COMPILER=                 :: 自动识别的编译器（cl/g++）
-set EXE_SUFFIX=.exe           :: Windows可执行文件后缀
-set SERVER_NEW_NAME=ColyServer :: Server重命名为ColyServer
-set CONFIG_FILE=InteractiveColy.cly :: 需要复制的配置文件
+set SERVER_NEW_NAME=ColyServer
+set CONFIG_FILE=InteractiveColy.cly
+set LANGSYNC_DIR=%CURRENT_DIR%\LanguageSyncLib
 
-:: ===================== 1. 自动识别编译器（仅检测，不修改文件） =====================
-echo Step 1/6: Detecting compiler (cl/g++)...
+:: ===================== 1. Detect Compiler =====================
+echo Step 1/7: Detecting compiler (cl/g++)...
 
-:: 优先检测MSVC的cl.exe（需先运行vcvarsall.bat配置MSVC环境）
 where cl > nul 2>&1
 if not errorlevel 1 (
     set COMPILER=cl
-    echo Detected MSVC cl.exe (priority compiler)
+    echo Detected MSVC cl.exe
 ) else (
-    :: 检测MinGW的g++
     where g++ > nul 2>&1
     if not errorlevel 1 (
         set COMPILER=g++
         echo Detected MinGW g++
     ) else (
-        echo Error: No compiler found! 
+        echo Error: No compiler found!
         echo Please install MSVC (cl.exe) or MinGW (g++), and add to PATH.
         pause
         exit /b 1
     )
 )
 
-:: ===================== 2. 创建目标目录 =====================
-echo Step 2/6: Creating target directories...
+:: ===================== 2. Create Target Directories =====================
+echo Step 2/7: Creating target directories...
 if not exist "%COLY_ROOT%" mkdir "%COLY_ROOT%"
+if not exist "%SETTINGS_DIR%" mkdir "%SETTINGS_DIR%"
 if not exist "%SERVICE_DIR%" mkdir "%SERVICE_DIR%"
+if not exist "%LIB_DIR%" mkdir "%LIB_DIR%"
 if not exist "%TEMP_DIR%" mkdir "%TEMP_DIR%"
-echo Target directories created: %COLY_ROOT%
+echo Target directories created.
 
-:: ===================== 3. 编译前检查源码（仅检查存在性，不修改） =====================
-echo Step 3/6: Checking source files...
+:: ===================== 3. Check Source Files =====================
+echo Step 3/7: Checking source files...
 if not exist "%CURRENT_DIR%\Coly.cpp" (
-    echo Error: Coly.cpp not found in current directory!
+    echo Error: Coly.cpp not found!
     pause
     exit /b 1
 )
 if not exist "%CURRENT_DIR%\server.cpp" (
-    echo Error: server.cpp not found in current directory!
+    echo Error: server.cpp not found!
+    pause
+    exit /b 1
+)
+if not exist "%CURRENT_DIR%\%CONFIG_FILE%" (
+    echo Error: %CONFIG_FILE% not found!
     pause
     exit /b 1
 )
 echo All source files found.
 
-:: ===================== 4. 智能编译（仅适配参数，不修改源码） =====================
-echo Step 4/6: Compiling with %COMPILER% (C++20)...
+:: ===================== 4. Compile =====================
+echo Step 4/7: Compiling with %COMPILER% (C++20)...
 
-:: 4.1 编译Coly.cpp（根据编译器适配参数）
 if "%COMPILER%"=="cl" (
-    :: MSVC cl编译参数（适配C++20，-I. → /I.，无-lpthread）
-    cl /std:c++20 /I. /Fe:"%CURRENT_DIR%\Coly%EXE_SUFFIX%" "%CURRENT_DIR%\Coly.cpp" /link /OUT:"%CURRENT_DIR%\Coly%EXE_SUFFIX%"
+    cl /std:c++20 /I. /Fe:"%CURRENT_DIR%\Coly.exe" "%CURRENT_DIR%\Coly.cpp" /link /OUT:"%CURRENT_DIR%\Coly.exe"
 ) else (
-    :: MinGW g++编译参数（C++20，-I.，-lpthread）
-    g++ -std=c++20 -I. -lpthread "%CURRENT_DIR%\Coly.cpp" -o "%CURRENT_DIR%\Coly%EXE_SUFFIX%"
+    g++ -std=c++20 -I. -lpthread "%CURRENT_DIR%\Coly.cpp" -o "%CURRENT_DIR%\Coly.exe"
 )
-:: 检查Coly编译结果
-if not exist "%CURRENT_DIR%\Coly%EXE_SUFFIX%" (
-    echo Error: Failed to compile Coly.cpp with %COMPILER%!
+if not exist "%CURRENT_DIR%\Coly.exe" (
+    echo Error: Failed to compile Coly.cpp!
     pause
     exit /b 1
 )
-echo Compiled: Coly.cpp → %CURRENT_DIR%\Coly%EXE_SUFFIX%
+echo Compiled: Coly.exe
 
-:: 4.2 编译server.cpp（根据编译器适配参数）
 if "%COMPILER%"=="cl" (
-    :: MSVC cl编译参数
-    cl /std:c++20 /I. /Fe:"%CURRENT_DIR%\server%EXE_SUFFIX%" "%CURRENT_DIR%\server.cpp" /link /OUT:"%CURRENT_DIR%\server%EXE_SUFFIX%"
+    cl /std:c++20 /I. /Fe:"%CURRENT_DIR%\server.exe" "%CURRENT_DIR%\server.cpp" /link /OUT:"%CURRENT_DIR%\server.exe"
 ) else (
-    :: MinGW g++编译参数
-    g++ -std=c++20 -I. -lpthread "%CURRENT_DIR%\server.cpp" -o "%CURRENT_DIR%\server%EXE_SUFFIX%"
+    g++ -std=c++20 -I. -lpthread "%CURRENT_DIR%\server.cpp" -o "%CURRENT_DIR%\server.exe"
 )
-:: 检查server编译结果
-if not exist "%CURRENT_DIR%\server%EXE_SUFFIX%" (
-    echo Error: Failed to compile server.cpp with %COMPILER%!
+if not exist "%CURRENT_DIR%\server.exe" (
+    echo Error: Failed to compile server.cpp!
     pause
     exit /b 1
 )
-echo Compiled: server.cpp → %CURRENT_DIR%\server%EXE_SUFFIX%
+echo Compiled: server.exe
 
-:: ===================== 5. 复制编译产物到目标目录（重命名Server为ColyServer） =====================
-echo Step 5/6: Copying binaries to target directory...
-copy /Y "%CURRENT_DIR%\Coly%EXE_SUFFIX%" "%COLY_ROOT%\" > nul
-copy /Y "%CURRENT_DIR%\server%EXE_SUFFIX%" "%SERVICE_DIR%\%SERVER_NEW_NAME%%EXE_SUFFIX%" > nul
-echo Copied: Coly%EXE_SUFFIX% → %COLY_ROOT%\Coly%EXE_SUFFIX%
-echo Copied & renamed: server%EXE_SUFFIX% → %SERVICE_DIR%\%SERVER_NEW_NAME%%EXE_SUFFIX%
+:: ===================== 5. Copy Binaries =====================
+echo Step 5/7: Copying binaries...
+copy /Y "%CURRENT_DIR%\Coly.exe" "%COLY_ROOT%\" > nul
+copy /Y "%CURRENT_DIR%\server.exe" "%SERVICE_DIR%\%SERVER_NEW_NAME%.exe" > nul
+echo Copied: Coly.exe, %SERVER_NEW_NAME%.exe
 
-:: ===================== 6. 复制配置文件（InteractiveColy.cly） =====================
-echo Step 6/6: Copying configuration file (%CONFIG_FILE%)...
-if exist "%CURRENT_DIR%\%CONFIG_FILE%" (
-    copy /Y "%CURRENT_DIR%\%CONFIG_FILE%" "%COLY_ROOT%\" > nul
-    echo Copied: %CONFIG_FILE% → %COLY_ROOT%\%CONFIG_FILE%
-) else (
-    echo Error: %CONFIG_FILE% not found in current directory!
-    pause
-    exit /b 1
+:: ===================== 6. Copy Libraries and Config =====================
+echo Step 6/7: Copying libraries and configuration...
+
+:: VariableSyncLib headers
+if exist "%CURRENT_DIR%\LanguageSyncLib\json.hpp" copy /Y "%CURRENT_DIR%\LanguageSyncLib\json.hpp" "%LIB_DIR%\" > nul
+if exist "%CURRENT_DIR%\LanguageSyncLib\GXPass.hpp" copy /Y "%CURRENT_DIR%\LanguageSyncLib\GXPass.hpp" "%LIB_DIR%\" > nul
+if exist "%CURRENT_DIR%\LanguageSyncLib\ColyCppSync.hpp" copy /Y "%CURRENT_DIR%\LanguageSyncLib\ColyCppSync.hpp" "%LIB_DIR%\" > nul
+if exist "%CURRENT_DIR%\LanguageSyncLib\VariableSyncService.hpp" copy /Y "%CURRENT_DIR%\LanguageSyncLib\VariableSyncService.hpp" "%LIB_DIR%\" > nul
+if exist "%CURRENT_DIR%\NCInt.hpp" copy /Y "%CURRENT_DIR%\NCInt.hpp" "%LIB_DIR%\" > nul
+if exist "%CURRENT_DIR%\NCint.hpp" copy /Y "%CURRENT_DIR%\NCint.hpp" "%LIB_DIR%\" > nul
+if exist "%CURRENT_DIR%\asio.hpp" copy /Y "%CURRENT_DIR%\asio.hpp" "%LIB_DIR%\" > nul
+if exist "%CURRENT_DIR%\asio" (
+    if not exist "%LIB_DIR%\asio" mkdir "%LIB_DIR%\asio"
+    xcopy /E /I /Y "%CURRENT_DIR%\asio" "%LIB_DIR%\asio\" > nul
+)
+echo Copied: VariableSyncLib headers
+
+:: LanguageMap
+if exist "%CURRENT_DIR%\Settings\LanguageMap_Windows.json" (
+    copy /Y "%CURRENT_DIR%\Settings\LanguageMap_Windows.json" "%SETTINGS_DIR%\LanguageMap.json" > nul
+    echo Copied: LanguageMap.json (from LanguageMap_Windows.json)
 )
 
-:: ===================== 完成 =====================
+:: InteractiveColy.cly
+copy /Y "%CURRENT_DIR%\%CONFIG_FILE%" "%COLY_ROOT%\" > nul
+echo Copied: %CONFIG_FILE%
+
+:: ===================== 7. Install ColyPythonSync =====================
+echo Step 7/7: Installing ColyPythonSync...
+if exist "%LANGSYNC_DIR%\ColyPythonSync\pyproject.toml" (
+    pushd "%LANGSYNC_DIR%\ColyPythonSync"
+    pip install .
+    popd
+    echo ColyPythonSync installed.
+) else (
+    echo Warning: ColyPythonSync package not found, skipping.
+)
+
+:: ===================== Complete =====================
 echo.
 echo ========================================
-echo Coly v1.5.3 Build & Install Success!
+echo Coly v2.0.3 Install Success!
 echo ========================================
-echo Compiler used: %COMPILER%
-echo Local binaries: %CURRENT_DIR%\Coly%EXE_SUFFIX%, %CURRENT_DIR%\server%EXE_SUFFIX%
-echo Installed to: %COLY_ROOT%\Coly%EXE_SUFFIX%
-echo               %SERVICE_DIR%\%SERVER_NEW_NAME%%EXE_SUFFIX%
-echo Config file: %COLY_ROOT%\%CONFIG_FILE%
-echo Note: No source files were modified!
+echo Compiler: %COMPILER%
+echo Installed to: %COLY_ROOT%
+echo Run: %COLY_ROOT%\Coly.exe
+echo Server: %SERVICE_DIR%\%SERVER_NEW_NAME%.exe
 echo ========================================
 
 pause

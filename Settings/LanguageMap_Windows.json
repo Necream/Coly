@@ -2,8 +2,8 @@
     "C++": {
         "needcompile": true,
         "extension": "cpp",
-        "compilerun": "cl /nologo /std:c++20 /utf-8 /EHsc $ /Fe:^.exe > nul && ^.exe *",
-        "compile": "cl /nologo /std:c++20 /utf-8 /EHsc $ /Fe:^.exe > nul",
+        "compilerun": "cl /nologo /std:c++20 /I\"C:\\Coly\\VariableSyncLib\" /utf-8 /EHsc $ /Fe:^.exe > nul && ^.exe *",
+        "compile": "cl /nologo /std:c++20 /I\"C:\\Coly\\VariableSyncLib\" /utf-8 /EHsc $ /Fe:^.exe > nul",
         "run": "^.exe *"
     },
     "Python": {

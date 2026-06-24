@@ -1,112 +1,121 @@
-# Coly v2.0.1
+# Coly v2.0.3
 
-This document was originally written in **Chinese**.
-Translated by **DeepSeek V4 Pro**
+This document was edited in **Chinese**.
 
 ---
 
-## Update Highlights
+## Updated Content
 
-- Fixed an issue where Python code blocks under the `OnlyCompile` flag would fail to exit, instead returning a connection failure signal.
+- Changed the address for connecting to ColyServer in the C++ code block library from `localhost` to `127.0.0.1`, reducing latency by approximately 2s.
+- Added exception handling for the C++ code block library. You no longer need to `define var named OnlyCompile with false` before calling C++ code blocks.
+- Changed the default Windows compilation command. You can now directly `#include <ColyCppSync.hpp>`.
 
-## Installation & Deployment
+## Installation and Usage
 
-Please use the installation script, or perform manual installation following the directory structure outlined below.
+Please use the installation script, or follow the structure below to install manually.
 For all supported systems, you need to install the `ColyPythonSync` library.
 Execute `pip install .` in the `./LanguageSyncLib/ColyPythonSync/` directory of this project.
 
-### Linux Directory Layout
-Create the following folders under `/lib/` on Linux systems:
+You need to create the following folders under `/lib/` on **Linux** as described below:
 - **/lib/**
   - **Coly/**
     - **Settings/**
-      - **LanguageMap.json** (manually copy `LanguageMap_Linux.json` to this path)
+      - **LanguageMap.json (manually copy LanguageMap_Linux.json)**
     - **VariableSyncService/**
-      - **server** (you may rename this executable freely; it supports auto-start on boot and must launch before Coly initializes)
-    - **VariableSyncLib/** (stores C++ development libraries implementing the standard ColyVariableSyncService interface; import via `#include "ColyCppSync.hpp"`)
+      - **ColyServer**
+    - **VariableSyncLib/ (stores the libraries you need when writing C++ code blocks, using the standard ColyVariableSyncService interface, include "ColyCppSync.hpp" when using)**
       - **json.hpp**
       - **GXPass.hpp**
       - **NCInt.hpp**
+      - **ColyCppSync.hpp**
+      - **VariableSyncService.hpp**
       - **asio.hpp**
       - **asio/**
 
-Additionally, create the directory `/usr/local/share/Coly/TempCode` and run the following bash commands:
+Additionally, you need to create the `/usr/local/share/Coly/TempCode` folder and execute:
 ```Bash
 sudo chmod 777 /usr/local/share/Coly -R
 sudo chown nobody:nogroup /usr/local/share/Coly -R
 ```
 
-### Windows Directory Layout
-Create the following folders under the root `C:\` drive on Windows systems:
+You need to create the following folders under `C:\` on **Windows** as described below:
 - **C:\\**
   - **Coly\\**
     - **Settings\\**
-      - **LanguageMap.json** (manually copy `LanguageMap_Windows.json` to this path)
+      - **LanguageMap.json (manually copy LanguageMap_Windows.json)**
     - **TempCode\\**
-    - **InteractiveColy.cly** (optional file; omitting this will cause errors and prevent Coly from starting when launched without command-line arguments)
+    - **InteractiveColy.cly (optional, but if you don't copy this file, errors will occur and Coly won't start when launched without command-line arguments)**
     - **VariableSyncService\\**
-      - **server.exe** (renaming permitted; supports boot auto-start and must run prior to Coly startup)
-    - **VariableSyncLib\\** (C++ development libraries for ColyVariableSyncService; import via `#include "ColyCppSync.hpp"`)
+      - **ColyServer.exe**
+    - **VariableSyncLib\\ (stores the libraries you need when writing C++ code blocks, using the standard ColyVariableSyncService interface, include "ColyCppSync.hpp" when using)**
       - **json.hpp**
       - **GXPass.hpp**
+      - **ColyCppSync.hpp**
       - **NCInt.hpp**
+      - **VariableSyncService.hpp**
       - **asio.hpp**
       - **asio\\**
 
-### Critical Notes
-- Coly uses the **MSVC** compiler toolchain, so `LanguageMap_Windows.json` references `cl.exe`. Modify the compiler command manually if you intend to use `g++`.
-- `ColyVariableSyncService` does **not** encrypt your data. If data protection is required, edit the source code to remove all output logic—this will not affect **client** functionality.
+Please note that **Coly** uses the **MSVC** compiler toolchain, so `LanguageMap_Windows.json` uses `cl.exe`. If you need to use `g++`, you must modify the command yourself.
+If you need to use the MSVC compiler toolchain, you need to configure the following environment variables. **Please modify the paths according to your actual installation.**
+- System variable `INCLUDE`: `C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\cppwinrt;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\shared;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\ucrt;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\winrt;`
+- System variable `LIB`: `C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\lib;C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\lib\onecore\x64;C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\um\x64;C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\ucrt\x64;`
+- User variable `Path`: `C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\bin\Hostx64\x64`
+
+Please note that `ColyVariableSyncService` does **not** encrypt your data. If you need data protection, please modify the code to remove all output; this will not affect **Client** functionality.
 
 ## Changelog
 
+
 - 2.0.1
-Fixed the issue where the Python module was inconvenient to load. You can now load it using the method described below.
+Fixed an issue where Python could not exit under the `OnlyCompile` flag and instead returned a connection failure signal.
 
 - 2.0.0
-Added Python language auto-sync support
+Added Python language auto-sync support.
+Fixed the issue where the Python module was inconvenient to load. You can now load it using the method described below.
 
-- 1.9.3
-This update fixes an issue where trailing spaces assigned to variables declared via `define var/privatevar` would disappear. However, command validation rules have become stricter—code written in accordance with this documentation will function normally.
-This update introduces the `[Language]:` series synchronized variables; usage details are covered later in this document.
-This update introduces two new non-synchronized functional variables, `Size` and `ASCII`; their usage is explained below.
-This update fixes a subprocess creation bug where identical `subprocessID` values generated within the same millisecond prevented child processes from launching.
+- 1.9.3:
+This update fixes an issue where trailing spaces in variable content defined via `define var/privatevar` would disappear, but command validation rules have become stricter. However, code written according to the documentation will work fine.
+This update introduces the `[Language]:` series of synchronized variables; specific usage will be described later.
+This update introduces two new functional variables, `Size` and `ASCII`, which are not synchronizable; specific usage will be described later.
+This update fixes an issue where Coly would create the same `subprocessID` within the same millisecond when creating subprocesses, preventing child processes from starting.
 
-- 1.5.3
-This update fixes broken `Input` and `InputLine` behavior on Linux caused by improper handling of `'\r'` and `'\n'` characters.
-This update introduces `privatevar` and `privatecode` declarations; these resources are never synced to the **Server** and deliver substantial performance gains when synchronization is unnecessary.
-This update introduces the `OnlyCompile` and `NoReg` functional variables. `NoReg` is not synchronized to `ColyVariableSyncService`.
-**Important: If you set `NoReg = true`, `OnlyCompile` will also be disabled, as the `OnlyCompile` flag is transmitted through VariableSyncService.**
+- 1.5.3:
+This update fixes a potential issue with `Input` and `InputLine` on Linux, caused by improper handling of `'\r'` and `'\n'`.
+This update introduces `privatevar` and `privatecode`, which are not synced to the **Server** and can significantly improve execution speed when synchronization is not needed.
+This update introduces the `OnlyCompile` and `NoReg` variables. `NoReg` is not synced to `ColyVariableSyncService`.
+**Please note: if you set `NoReg = true`, then `OnlyCompile` will also not take effect, because the `OnlyCompile` flag is passed through VariableSyncService.**
 
-- v1.3.2
-This update fixes execution bugs in the `if` statement and refines conditional evaluation for improved overall usability. Introduces the `OnlyCompile` and `NoReg` functional variables (`OnlyCompile` existed in the previous release but was undocumented).
+- v1.3.2:
+- This update fixes a runtime bug in `if`, changes the `if` evaluation logic, and improves the overall experience. Added the `OnlyCompile` and `NoReg` functional variables (the previous version had `OnlyCompile` but it was undocumented).
 
 ## The Coly Language
 
-**Important: Starting from v0.3.0 and certain subsequent updates, you must manually start the Server before running Coly. Otherwise, Coly will treat the variable server as nonexistent and refuse to run.**
+**Please note: v0.3.0 and some subsequent versions require you to manually start the Server before running Coly, otherwise Coly will consider the variable server nonexistent and will not run.**
 
-Coly is a programming language that is **simple and easy to learn**, supporting the embedding of other programming languages within a single script to help beginners, allowing you to leverage the strengths of each language to **reduce code volume**.
-Coly adopts linguistic logic rather than mathematical logic, making the code more readable. However, the **downside is reduced ease of writing**.
-**Coly will be updated long-term**, and each update guarantees **a certain level of** backward compatibility.
-Coly can **synchronize variables** across different code blocks to improve development efficiency, allowing Coly to serve as a software Runtime Framework.
-Coly only synchronizes variables of specific types developed specifically for Coly, while **all Coly code is fully synchronized**.
+Coly is a **simple and easy to learn** programming language that supports referencing other programming languages within a piece of code to make it easier for beginners, allowing you to leverage the strengths of each language to **reduce code volume**.
+Coly uses linguistic logic rather than mathematical logic, making code more readable. However, the **downside is that writing code becomes slightly more complex**.
+**Coly will be updated long-term**, and each update will guarantee **a certain level of** compatibility.
+Coly can **synchronize variables** between different code blocks to ensure your development efficiency, so Coly can be used as a software Runtime Framework.
+Coly only synchronizes variables of specific types that are specifically developed for Coly, while **all Coly code is fully synchronized**.
 Support for standalone functions written in other languages is still under development.
 
 **We strongly recommend that you successfully compile your code block code before placing it into a Coly code block.**
 
 ### Features
 
-- Coly synchronizes variables of auto-sync types defined by Coly in your code. Usage is simple—just assign values to Coly variables. If you need to use a Coly variable, simply read it.
+- Coly synchronizes variables in your code that use the auto-sync types specified by Coly. Usage is simple—just assign values to Coly variables. If you need to use a Coly variable, simply read it.
 - We provide native support for **C++** and **Python**. If you need variable synchronization for other languages, please write your own sync program or search for available programs online. **However, please note that if you use programs from the internet, we cannot guarantee the security of your computer or code. If you do not trust the developer, please back up your code.**
-- ~~**`import` in InteractiveColy is unavailable due to Coly performance optimizations!**~~ **Starting from v0.3.0, `import` has become a new command usable in InteractiveColy. The original performance optimizations have not been removed—we have retained both parts of the code.**
-- ~~Note that if you frequently use languages that require compilation, your code may be **recompiled unnecessarily**. This issue will be fixed in a future update.~~ **Fixed in v0.3.0, which added compiled-code detection to save time. Note that your code may be replaced after compilation; this will be fixed in the upcoming SafeColy.**
-- **SafeColy Initiative**: SafeColy is a closed-source tool for Coly that encrypts your code using GXPass technology and only retains source code in memory. Note that it is the SafeColy *tool* that is closed-source, not the SafeColy project.
-  - Technical Details: Feed your `.cly` script into the SafeColy toolchain, which outputs a `.cpp` file and compiles it automatically. Each compiled file will be different every time you use SafeColy, even for the same source file, because SafeColy uses random strings as encryption/decryption passwords.
-  - Application: As NCSoft's first fully-featured compiled (interpreted-core) programming language, SafeColy will be used in the upgraded version of GXCC as the GXCC Runtime Framework.
+- ~~**`import` in InteractiveColy is unavailable due to Coly performance optimizations!**~~ **Starting from v0.3.0, `import` has become a new command usable in InteractiveColy, and the original performance optimizations have not been removed—we have retained both parts of the code.**
+- ~~Please note that if you frequently use languages that require compilation, your code may be **recompiled unnecessarily**. This issue will be fixed in a future update.~~ **Fixed in v0.3.0, which added compiled-code detection to save time. Please note that your code may be replaced after compilation; this will be fixed in the upcoming SafeColy.**
+- **SafeColy Initiative**: SafeColy is a closed-source tool for Coly that encrypts your code using GXPass technology and only retains source code in memory. Note that it is the SafeColy *tool* that is closed-source—the SafeColy project itself remains open source alongside Coly.
+  - SafeColy Technical Details: Feed your `.cly` script into the SafeColy toolchain, which outputs a `.cpp` file and compiles it automatically. Each compiled file will be different every time you use SafeColy, even for the same source file, because SafeColy uses random strings as encryption/decryption passwords.
+  - SafeColy Application: As NCSoft's first fully-featured compiled (interpreted-core) programming language, SafeColy will be used in the upgraded version of GXCC as the GXCC Runtime Framework.
 
 #### Variable Synchronization
 
 - Starting from v0.3.0, variable synchronization is supported in Coly. Third-party language support and extensions will be added in future updates. If you need variable synchronization now, you can manually include the Coly library in your C++ code and use Coly's functions to manually sync variables. Future updates will not break compatibility, but may cause duplicate submissions of your variables.
-- ~~Your SubProcess inherits all variables from the Process, with **the same access permissions as the Process**. Note that if a variable exists in the Process but is undefined in the SubProcess, **it cannot be used even if data exists on the server**. This is due to Coly's local caching mechanism, which **does not maintain real-time synchronization with the server**. This mechanism both eases access pressure and restricts variable/code scope, preventing code blocks in the Process from being overwritten by identically-named code or var blocks in the SubProcess.~~ As of Coly v1.3.2, this behavior has been overridden due to more frequent variable synchronization.
+- ~~Your SubProcess inherits all variables from the Process, with **the same access permissions as the Process**. Please note that if a variable is undefined in the Process but used in the SubProcess, **it cannot be used even if data exists on the server**. This is due to Coly's local caching mechanism, which **does not maintain real-time synchronization with the server**. This mechanism both eases access pressure and restricts variable/code scope, preventing code in the Process from being overwritten by identically-named code or var blocks in the SubProcess.~~ As of Coly v1.3.2, this behavior has been overridden due to more frequent variable synchronization.
 - Different Processes cannot access each other! If you need to share data, you can write a server to create a parent process and suspend it indefinitely.
 - Variable synchronization uses the network. If you consent, you can **expose the Server** to share your IP and data with others.
 
@@ -133,7 +142,7 @@ jump 1
 
 ### Basic Syntax
 
-Apologies—the content below is not ordered. You may read through it in its entirety; after all, Coly is a very lightweight language.
+Apologies—the content below is not in order. You may read through it in its entirety; after all, Coly is a very lightweight language.
 
 #### Comments
 
@@ -194,7 +203,7 @@ print Hello, World!
 ```
 `print` separates content by spaces, but does not reduce spaces within the text. After calling a variable, you need to use a space to indicate the end of the variable name.
 When you use `print`, it will automatically add a newline after output.
-Example:
+For example:
 ```
 >  ./Coly.exe
 Welcome to Coly!
@@ -227,12 +236,12 @@ For more information about Coly - including syntax and available features - plea
 #### Functional Variables
 
 Functional variables, such as `Input`, allow you to perform certain interactions during use, and must be declared beforehand.
-Example: `define var named Input`.
+For example: `define var named Input`.
 
-##### Input / InputLine
+##### Input InputLine
 
 `$Input` and `$InputLine` can capture user input, but `$Input` only reads up to the next space or newline, while `$InputLine` reads all the way to the newline.
-Note that `Input` can be thought of as similar to `cin` in C++, but is not identical. After each input, you need to press Enter rather than Space.
+Please note that `Input` can be thought of as similar to `cin` in C++, but is not identical. After each input, you need to press Enter rather than Space.
 Usage example:
 ```Coly
 # Initially define two variables
@@ -264,13 +273,13 @@ If `NoReg` is `true`, the code block will not be registered when launched, meani
 ##### Size
 
 `Size` is a functional variable used to get the length of a `var`. Usage: first `define var named Size with ...`, then reference it as `$Size` when calling.
-For stability, `Size` does not participate in synchronization. Please define `Size` each time before use to assign it a value, but one assignment of `Size` can be used multiple times.
-Example:
+For stability, `Size` does not participate in synchronization. Please assign a value to `Size` using a definition before each use, but one assignment can be used multiple times.
+For example:
 ```cly
 # A simple addition operation demonstration
 define var named Input
 define var named a with $Input
-# Note: if you need to create an empty variable, use privatevar. For performance, empty var entries are not synced to the server.
+# Please note: if you need to create an empty variable, use privatevar. For performance reasons, empty var entries are not synced to the server.
 define privatevar named i
 define position named loop
 define var named Size with $i
@@ -289,8 +298,8 @@ print $Size
 
 ##### ASCII
 
-`ASCII` allows you to assign a value to it and get the character corresponding to that ASCII value. Note that you must use numeric input.
-Example:
+`ASCII` allows you to assign a value to it and get the character corresponding to that ASCII value. Please note that you must use numeric input.
+For example:
 ```cly
 define var named ASCII with 65
 print $ASCII
@@ -299,12 +308,12 @@ print $ASCII
 
 ##### [Language]:
 
-The `[Language]:` series functional variables override settings in `LanguageMap.json` at runtime. Since they override the settings, you cannot use these variables to read the settings.
+This series of functional variables overrides the settings in `LanguageMap.json` in memory. Since they override the settings, you cannot use these variables to read the settings.
 
 ###### [Language]:needcompile
 
 This variable defines whether your language requires compilation; the value should be `true` or `false`.
-This must be defined for both interpreted and compiled languages.
+This must be defined for both interpreted and compiled variables.
 
 ###### [Language]:extension
 
@@ -317,7 +326,7 @@ This variable defines the command required to compile and run your language.
 
 ###### [Language]:run
 
-This variable defines the command required to run your language. **Note: for interpreted languages, use this variable. For compiled languages, you also need to define this variable for performance optimization.**
+This variable defines the command required to run your language. **Please note: for interpreted languages, use this variable. For compiled languages, you also need to define this variable for performance optimization.**
 
 Content example:
 ```cly
@@ -340,18 +349,18 @@ use 1
 - `^`: Represents the full path of the source code file without the extension
 - `*`: Represents the `subprocessid`; Coly auto-sync variables depend on this for subprocess registration.
 
-#### if / ifn
+#### if ifn
 
 `if` and `ifn` are **new additions**.
 `if` and `ifn` determine whether two variables are equal in Coly. If they are equal, `if` executes the following `code`, while `ifn` does not. If they are not equal, the opposite occurs.
-**Note that the `type` (whether `code` or `var`) of the variables does not affect comparison. Both compared items must be variables; if you need to compare against a constant, define a `privatevar` first.**
+**Please note that the `type` (whether `code` or `var`) of the variables does not affect comparison. Both compared items must be variables; if you need to compare against a constant, define a `privatevar` first.**
 Usage:
 ```Coly
 if $var1 $var2 [Coly Code]
 ifn $var1 $var2 [Coly Code]
 ```
 Where `[Coly Code]` represents executable Coly code, limited to a single line.
-Example:
+For example:
 ```Coly
 define var named 1 with 1
 define var named 2 with 1
@@ -364,12 +373,12 @@ The result will output `1`.
 Library imports are a **new addition**, not present in the Aug 31, 2024 documentation.
 You can reference library files to use code blocks provided by others. The syntax is `import lib ...`
 The **ColyVariableSyncService** was introduced in v0.3.0, and you can use `import lib ...` in interactive mode.
-Note that you do not need to use escape characters on Windows.
+Please note that you do not need to use escape characters on Windows.
 
 #### commitvaroperation
 
 `commitvaroperation` allows you to send requests directly to **ColyVariableSyncService** for versatile development workflows.
-**Note that if issues arise, you will receive error messages, which will also appear in the Server console/log. You are responsible for resolving any issues caused by error messages. Error detection is already built into Coly.**
+**Please note that if issues arise, you will receive error messages, which will also appear in the Server console/log. You are responsible for resolving any issues caused by error messages. Error detection is already built into Coly.**
 Usage:
 ```Coly
 # Send a subprocess registration request to ColyVariableSyncServer.
@@ -379,7 +388,7 @@ commitvaroperation reg subprocess 123
 ##### All Available Requests
 
 Below is the tree structure of available commands. To use them, traverse from the root node down to the child node, **plus the additional information specified.**
-If you want to test manual requests, you can use `commitvaroperation.cly`.
+If you want to test manual requests, you can use `commitvaroperation.cly` to test.
 
 - set
     - var *JSON, see the VarContainer format below*
@@ -435,7 +444,7 @@ get process
 
 The `Timestamp` in both JSON structures above is the timestamp of the current operation and should be determined when uploading. Timestamps are used to resolve conflicts during synchronization. However, in Coly you cannot modify only a portion of a variable, **so you can only assign a fixed value to `Timestamp` or use another language to modify it.**
 
-Example (where `123` is the variable name):
+For example (where `123` is the variable name):
 ```VariableSync
 get var 123
 ```
@@ -454,7 +463,7 @@ If you have defined `NoReg` in Coly or elsewhere and its value is `true`, your p
 ### RegColyVar(varname);
 
 This function allows you to define a variable of type `std::string`, with basic `std::string` operations. If you find that some operations are not defined, you can manually use `varname.data.(std::string operations)` and then sync the variable. In other cases, this type can be used interchangeably with `std::string`.
-**Note that after registration, data previously existing on the Server will be overwritten!**
+**Please note that after registration, data previously existing on the Server will be overwritten!**
 
 ### ColySyncString
 
@@ -472,7 +481,7 @@ Manual use is not recommended.
 
 Allows you to read data from the Server in read-only mode. Afterwards, you can perform string operations using `varname`. You can implicitly convert it to `std::string` and then assign it to `ColyVariable`, which can compensate for the shortcomings of `RegColyVar()`.
 
-Example:
+For example:
 ```cpp
 #include <iostream>
 #include <string>
@@ -505,13 +514,14 @@ Usage: `A = RegColyVar("A")`
 #### ReadColyVar(varname)
 
 This function allows you to read an existing `ColyVar`.
-Note that the returned type is not `string`; it is a read-only type. Modifications will not affect the value in `ColyServer`.
+Please note that the returned type is not `string`; it is a read-only type. Modifications will not affect the value in `ColyServer`.
 
 ### InitColySyncService(argv)
 
 This function allows you to connect to `ColyServer` and perform variable operations.
 
-Example:
+
+For example:
 ```py
 import sys
 from ColyPythonSync import InitColySyncService,RegColyVar
