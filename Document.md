@@ -1,4 +1,4 @@
-# Coly v2.0.3
+# Coly v2.0.4
 
 This document was edited in **Chinese**.
 
@@ -6,9 +6,8 @@ This document was edited in **Chinese**.
 
 ## 更新的内容
 
-- 将C++代码块库中连接ColyServer的地址从`localhost`改为`127.0.0.1`，能缩短2s左右的延迟。
-- 添加了C++代码块库的异常处理，现在不必在调用C++代码块之前`define var named OnlyCompile with false`
-- 更改了默认的Windows编译指令，现在你可以直接`#include <ColyCppSync.hpp>`
+- 修复了在为代码块注册时可能出现不注册的情况。
+- 补充了文档中缺失的环境变量。
 
 ## 安装和使用
 
@@ -59,13 +58,17 @@ sudo chown nobody:nogroup /usr/local/share/Coly -R
 请注意，**Coly**采用了**MSVC**编译工具链，所以`LanguageMap_Windows.json`中使用的是`cl.exe`，如果你需要使用`g++`需要自定更改命令。
 如果你需要使用MSVC编译工具链，你需要配置以下的环境变量。**请按照你的实际路径更改**
 - 系统变量`INCLUDE`: `C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\cppwinrt;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\shared;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\ucrt;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\winrt;`
-- 系统变量`LIB`: `C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\lib;C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\lib\onecore\x64;C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\um\x64;C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\ucrt\x64;`
+- 系统变量`LIB`: `C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\lib;C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\lib\onecore\x64;C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\um\x64;C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\ucrt\x64;C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\lib\x64;`
 - 用户变量`Path`: `C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\bin\Hostx64\x64`
 
 请注意，`ColyVariableSyncService`不会加密你的数据。所以如果有数据保护的需求请更改代码删掉所有的输出，不影响**Client**的功能。
 
 ## 更新日志
 
+- 2.0.3
+将C++代码块库中连接ColyServer的地址从`localhost`改为`127.0.0.1`，能缩短2s左右的延迟。
+添加了C++代码块库的异常处理，现在不必在调用C++代码块之前`define var named OnlyCompile with false`
+更改了默认的Windows编译指令，现在你可以直接`#include <ColyCppSync.hpp>`
 
 - 2.0.1
 修复了Python在`OnlyCompile`标记下无法退出而是导致返回连接失败信号的问题

@@ -1,1 +1,4 @@
 .history/
+*.exe
+*.obj
+*.pdb

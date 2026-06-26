@@ -1,4 +1,4 @@
-# Coly v2.0.3
+# Coly v2.0.4
 
 This document was edited in **Chinese**.
 
@@ -6,9 +6,8 @@ This document was edited in **Chinese**.
 
 ## Updated Content
 
-- Changed the address for connecting to ColyServer in the C++ code block library from `localhost` to `127.0.0.1`, reducing latency by approximately 2s.
-- Added exception handling for the C++ code block library. You no longer need to `define var named OnlyCompile with false` before calling C++ code blocks.
-- Changed the default Windows compilation command. You can now directly `#include <ColyCppSync.hpp>`.
+- Fixed an issue where code blocks might not register during the registration process.
+- Added missing environment variables to the documentation.
 
 ## Installation and Usage
 
@@ -59,13 +58,17 @@ You need to create the following folders under `C:\` on **Windows** as described
 Please note that **Coly** uses the **MSVC** compiler toolchain, so `LanguageMap_Windows.json` uses `cl.exe`. If you need to use `g++`, you must modify the command yourself.
 If you need to use the MSVC compiler toolchain, you need to configure the following environment variables. **Please modify the paths according to your actual installation.**
 - System variable `INCLUDE`: `C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\include;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\cppwinrt;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\shared;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\ucrt;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\um;C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\winrt;`
-- System variable `LIB`: `C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\lib;C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\lib\onecore\x64;C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\um\x64;C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\ucrt\x64;`
+- System variable `LIB`: `C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\lib;C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\lib\onecore\x64;C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\um\x64;C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\ucrt\x64;C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\lib\x64;`
 - User variable `Path`: `C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\bin\Hostx64\x64`
 
 Please note that `ColyVariableSyncService` does **not** encrypt your data. If you need data protection, please modify the code to remove all output; this will not affect **Client** functionality.
 
 ## Changelog
 
+- 2.0.3
+Changed the address for connecting to ColyServer in the C++ code block library from `localhost` to `127.0.0.1`, reducing latency by approximately 2s.
+Added exception handling for the C++ code block library. You no longer need to `define var named OnlyCompile with false` before calling C++ code blocks.
+Changed the default Windows compilation command. You can now directly `#include <ColyCppSync.hpp>`.
 
 - 2.0.1
 Fixed an issue where Python could not exit under the `OnlyCompile` flag and instead returned a connection failure signal.

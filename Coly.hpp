@@ -572,10 +572,8 @@ void usedefine(const std::string &content, NetworkSession& session, bool wait=tr
     std::string regcommand = "reg subprocess ";
     regcommand += RunProof;
     std::string echo;
-    if(definedvar.find("NoReg") != definedvar.end()){
-        if(definedvar["NoReg"].getvalue(session) != "true"){
-            echo = send_message(session, regcommand);
-        }
+    if((definedvar.find("NoReg") != definedvar.end())&&(definedvar["NoReg"].getvalue(session) != "true")){
+        echo = send_message(session, regcommand);
     }else echo = send_message(session, regcommand);
     if(prefix(echo, 7) == "[ERROR]"){
         std::cout << echo << std::endl;
