@@ -1,4 +1,4 @@
-# Coly v2.0.4
+# Coly v2.1.1
 
 This document was edited in **English**.
 Translated by **DeepSeek V4 Pro**
@@ -7,8 +7,7 @@ Translated by **DeepSeek V4 Pro**
 
 ## Updated Content
 
-- Fixed an issue where code blocks might not register during the registration process.
-- Added missing environment variables to the documentation.
+- Fixed an issue where the server would unexpectedly delete connection credentials.
 
 ## Installation and Usage
 
@@ -65,6 +64,10 @@ If you need to use the MSVC compiler toolchain, you need to configure the follow
 Please note that `ColyVariableSyncService` does **not** encrypt your data. If you need data protection, please modify the code to remove all output; this will not affect **Client** functionality.
 
 ## Changelog
+
+- 2.0.4
+Fixed an issue where code blocks might not register during the registration process.
+Added missing environment variables to the documentation.
 
 - 2.0.3
 Changed the address for connecting to ColyServer in the C++ code block library from `localhost` to `127.0.0.1`, reducing latency by approximately 2s.
