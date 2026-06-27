@@ -1,6 +1,7 @@
 # Coly v2.0.4
 
-This document was edited in **Chinese**.
+This document was edited in **English**.
+Translated by **DeepSeek V4 Pro**
 
 ---
 

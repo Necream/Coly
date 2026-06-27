@@ -1,4 +1,4 @@
-# Coly v2.0.4
+# Coly v2.1.1
 
 This document was edited in **Chinese**.
 
@@ -6,8 +6,7 @@ This document was edited in **Chinese**.
 
 ## 更新的内容
 
-- 修复了在为代码块注册时可能出现不注册的情况。
-- 补充了文档中缺失的环境变量。
+- 修复了server意外删除连接凭据的情况。
 
 ## 安装和使用
 
@@ -64,6 +63,10 @@ sudo chown nobody:nogroup /usr/local/share/Coly -R
 请注意，`ColyVariableSyncService`不会加密你的数据。所以如果有数据保护的需求请更改代码删掉所有的输出，不影响**Client**的功能。
 
 ## 更新日志
+
+- 2.0.4
+修复了在为代码块注册时可能出现不注册的情况。
+补充了文档中缺失的环境变量。
 
 - 2.0.3
 将C++代码块库中连接ColyServer的地址从`localhost`改为`127.0.0.1`，能缩短2s左右的延迟。
