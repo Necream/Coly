@@ -6,6 +6,8 @@
 #include <cstring>
 #include <thread>
 #include <mutex>
+#include <condition_variable>
+#include <atomic>
 #include "GXPass.hpp"
 #define ASIO_STANDALONE
 #include "asio.hpp"
@@ -28,13 +30,22 @@ struct Operation{
 struct ServerSession;
 string CommandExecutor(string command,shared_ptr<ServerSession> client);
 
+struct WaitState{
+    mutex m;
+    condition_variable cv;
+    atomic<unsigned long long> version{0};
+};
+
 vector<Operation> operations;
 mutex map_mutex;
 mutex process_mutex;
+mutex wait_mutex;
 MemoryContainer memory_container;
 map<string,string> proof_map;
 map<shared_ptr<ServerSession>,string> session_map;
 map<string,map<string,string>> subprocess_map;
+map<string,shared_ptr<WaitState>> process_wait_map;
+map<string,shared_ptr<WaitState>> var_wait_map;
 
 void OperationInit(){
     operations.push_back({"set",1});
@@ -43,6 +54,7 @@ void OperationInit(){
     operations.push_back({"sync",4});
     operations.push_back({"reg",5});
     operations.push_back({"login",6});
+    operations.push_back({"wait",7});
     operations.push_back({"process",1});
     operations.push_back({"var",2});
     operations.push_back({"subprocess",3});
@@ -54,6 +66,80 @@ struct ServerSession{
 
     ServerSession(tcp::socket sock) : socket(move(sock)) {}
 };
+
+shared_ptr<WaitState> get_wait_state(map<string,shared_ptr<WaitState>>& states, const string& key){
+    lock_guard<mutex> lock(wait_mutex);
+    auto& state = states[key];
+    if(!state){
+        state = make_shared<WaitState>();
+    }
+    return state;
+}
+
+void signal_wait_state(map<string,shared_ptr<WaitState>>& states, const string& key){
+    shared_ptr<WaitState> state;
+    {
+        lock_guard<mutex> lock(wait_mutex);
+        auto it = states.find(key);
+        if(it == states.end()){
+            state = make_shared<WaitState>();
+            states[key] = state;
+        }else{
+            state = it->second;
+        }
+    }
+    state->version.fetch_add(1, memory_order_release);
+    state->cv.notify_all();
+}
+
+set<string> collect_var_ids(const ProcessContainer& pc){
+    set<string> ids;
+    for(const auto& [varid, _] : pc.Vars){
+        ids.insert(varid);
+    }
+    return ids;
+}
+
+string wait_for_process_exit(const string& processid){
+    auto state = get_wait_state(process_wait_map, processid);
+    unsigned long long snapshot;
+    {
+        lock_guard<mutex> process_lock(process_mutex);
+        if(memory_container.process_container.find(processid) == memory_container.process_container.end()){
+            return "Process already exited";
+        }
+        snapshot = state->version.load(memory_order_acquire);
+    }
+    unique_lock<mutex> lock(state->m);
+    state->cv.wait(lock, [&]{
+        return state->version.load(memory_order_acquire) != snapshot;
+    });
+    return "Process exited";
+}
+
+string wait_for_var_change(const string& processid, const string& varid){
+    auto state = get_wait_state(var_wait_map, processid + "\x1f" + varid);
+    unsigned long long snapshot;
+    long long baseline_timestamp = -1;
+    {
+        lock_guard<mutex> process_lock(process_mutex);
+        auto pit = memory_container.process_container.find(processid);
+        if(pit == memory_container.process_container.end()){
+            return "Var changed";
+        }
+        auto vit = pit->second.Vars.find(varid);
+        if(vit == pit->second.Vars.end()){
+            return "Var changed";
+        }
+        baseline_timestamp = vit->second.Timestamp;
+        snapshot = state->version.load(memory_order_acquire);
+    }
+    unique_lock<mutex> lock(state->m);
+    state->cv.wait(lock, [&]{
+        return state->version.load(memory_order_acquire) != snapshot;
+    });
+    return "Var changed";
+}
 
 void close_session(shared_ptr<ServerSession> client){
     lock_guard<mutex> lock(map_mutex);
@@ -194,6 +280,14 @@ string CommandExecutor(string command,shared_ptr<ServerSession> client){
             lock_guard<mutex> lock(map_mutex);
             processid = session_map[client];
         }
+        set<string> old_var_ids;
+        {
+            lock_guard<mutex> lock(process_mutex);
+            auto it = memory_container.process_container.find(processid);
+            if(it != memory_container.process_container.end()){
+                old_var_ids = collect_var_ids(it->second);
+            }
+        }
         json j;
         try{
             j = json::parse(command);
@@ -207,6 +301,13 @@ string CommandExecutor(string command,shared_ptr<ServerSession> client){
         {
             lock_guard<mutex> lock(process_mutex);
             memory_container.process_container[processid] = pc;
+        }
+        set<string> affected_var_ids = old_var_ids;
+        for(const auto& [varid, _] : pc.Vars){
+            affected_var_ids.insert(varid);
+        }
+        for(const auto& varid : affected_var_ids){
+            signal_wait_state(var_wait_map, processid + "\x1f" + varid);
         }
         cout<<"Process operation completed"<<endl;
         return "Process operation completed";
@@ -232,6 +333,7 @@ string CommandExecutor(string command,shared_ptr<ServerSession> client){
             lock_guard<mutex> lock(process_mutex);
             memory_container.process_container[processid].Vars[varid] = v;
         }
+        signal_wait_state(var_wait_map, processid + "\x1f" + varid);
         cout<<"Var operation completed"<<endl;
         return "Var operation completed";
     }
@@ -311,7 +413,13 @@ string CommandExecutor(string command,shared_ptr<ServerSession> client){
         }
         {
             lock_guard<mutex> lock(process_mutex);
-            memory_container.process_container.erase(processid);
+            auto it = memory_container.process_container.find(processid);
+            if(it != memory_container.process_container.end()){
+                for(const auto& [varid, _] : it->second.Vars){
+                    signal_wait_state(var_wait_map, processid + "\x1f" + varid);
+                }
+                memory_container.process_container.erase(it);
+            }
         }
         {
             lock_guard<mutex> lock(map_mutex);
@@ -323,6 +431,7 @@ string CommandExecutor(string command,shared_ptr<ServerSession> client){
             }
             session_map.erase(client);
         }
+        signal_wait_state(process_wait_map, processid);
         cout<<"Process deleted"<<endl;
         return "Process deleted";
     }
@@ -346,6 +455,9 @@ string CommandExecutor(string command,shared_ptr<ServerSession> client){
             }else{
                 var_found = false;
             }
+        }
+        if(process_found){
+            signal_wait_state(var_wait_map, processid + "\x1f" + varid);
         }
         if(!process_found){
             lock_guard<mutex> lock(map_mutex);
@@ -387,9 +499,24 @@ string CommandExecutor(string command,shared_ptr<ServerSession> client){
         }
         ProcessContainer new_pc;
         new_pc.from_json(j);
+        set<string> old_var_ids;
+        {
+            lock_guard<mutex> lock(process_mutex);
+            auto it = memory_container.process_container.find(processid);
+            if(it != memory_container.process_container.end()){
+                old_var_ids = collect_var_ids(it->second);
+            }
+        }
         {
             lock_guard<mutex> lock(process_mutex);
             memory_container.process_container[processid].Sync(new_pc);
+        }
+        set<string> affected_var_ids = old_var_ids;
+        for(const auto& [varid, _] : new_pc.Vars){
+            affected_var_ids.insert(varid);
+        }
+        for(const auto& varid : affected_var_ids){
+            signal_wait_state(var_wait_map, processid + "\x1f" + varid);
         }
         cout<<"Process sync completed"<<endl;
         return "Process sync completed";
@@ -502,6 +629,25 @@ string CommandExecutor(string command,shared_ptr<ServerSession> client){
         client->subprocess_id = subprocessid;
         cout<<"Subprocess logged in."<<endl;
         return "Subprocess logged in";
+    }
+    if(operation_id==71){
+        string processid=GXPass::number2ABC(GXPass::compile(command));
+        // 等待退出，即memory_container.process_container[processid]被删除
+        return wait_for_process_exit(processid);
+    }
+    if(operation_id==72){
+        string varid=GXPass::number2ABC(GXPass::compile(command));
+        // 等待var改变
+        string processid;
+        {
+            lock_guard<mutex> lock(map_mutex);
+            if(session_map.find(client) == session_map.end()){
+                cout<<"[ERROR]Client not registered or logined, please register or login first."<<endl;
+                return "[ERROR]Client not registered or logined, please register or login first.";
+            }
+            processid = session_map[client];
+        }
+        return wait_for_var_change(processid, varid);
     }
     cout<<"[ERROR]Unknown command: "<<command<<endl;
     return "[ERROR]Unknown command: "+command;

@@ -1,4 +1,4 @@
-# Coly v2.1.1
+# Coly v2.2.0
 
 This document was edited in **Chinese**.
 
@@ -412,6 +412,9 @@ commitvaroperation reg subprocess 123
     - subprocess *SubprocessID*
 - login
     - subprocess *SubprocessID*
+- wait
+    - var *VarName*
+    - process *ProcessID*
 
 下面是两个JSON的结构，你也可以通过Coly目录下的`client`来获取，具体方法是
 ```VariableSync

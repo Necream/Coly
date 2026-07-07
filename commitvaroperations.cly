@@ -1,5 +1,5 @@
 define var named InputLine
 define position named loop
-define privatevar named operation with $InputLine
+define privatevar named operation with commitvaroperation $InputLine
 do $operation
 jump loop

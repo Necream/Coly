@@ -1,4 +1,4 @@
-# Coly v2.1.1
+# Coly v2.2.0
 
 This document was edited in **English**.
 Translated by **DeepSeek V4 Pro**
@@ -414,6 +414,9 @@ If you want to test manual requests, you can use `commitvaroperation.cly` to tes
     - subprocess *SubprocessID*
 - login
     - subprocess *SubprocessID*
+- wait
+    - var *VarName*
+    - process *ProcessID*
 
 Below are the two JSON structures. You can also obtain them via the `client` in the Coly directory:
 ```VariableSync
