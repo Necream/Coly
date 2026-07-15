@@ -9,6 +9,17 @@
 #include <cstdlib>
 #include <vector>
 #include <regex>
+#include <thread>
+#include <mutex>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <signal.h>
+#include <fcntl.h>
+#endif
 #include "json.hpp"
 #include "GXPass.hpp"
 #include "VariableSyncService.hpp"
@@ -17,8 +28,19 @@ using JSON = nlohmann::json;
 #define COLYPATH "C:\\Coly\\"
 #define TempPATH "C:\\Coly\\TempCode\\"
 #else
-#define COLYPATH "/lib/Coly/"
-#define TempPATH "/usr/local/lib/Coly/TempCode/"
+#define COLYPATH "/usr/local/share/Coly/"
+#define TempPATH "/usr/local/share/Coly/TempCode/"
+#endif
+
+#ifdef _WIN32
+using ProcessID = int64_t;
+#else
+using ProcessID = pid_t;
+#endif
+std::vector<ProcessID> subprocesses;
+std::mutex subprocess_mutex;
+#ifdef _WIN32
+std::vector<HANDLE> subprocessJobs;
 #endif
 
 void StartProcess(
@@ -111,6 +133,21 @@ void StartProcess(
         CloseHandle(pi.hThread);
 
     }).detach();
+    {
+        std::lock_guard<std::mutex> lock(subprocess_mutex);
+        subprocesses.push_back(pi.dwProcessId);
+#ifdef _WIN32
+        HANDLE hJob = CreateJobObjectA(NULL, NULL);
+        if (hJob != NULL)
+        {
+            JOBOBJECT_EXTENDED_LIMIT_INFORMATION jeli{};
+            jeli.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+            SetInformationJobObject(hJob, JobObjectExtendedLimitInformation, &jeli, sizeof(jeli));
+            AssignProcessToJobObject(hJob, pi.hProcess);
+            subprocessJobs.push_back(hJob);
+        }
+#endif
+    }
 
 
 #else
@@ -123,8 +160,9 @@ void StartProcess(
 
     if (pid == 0)
     {
-        dup2(pipefd[1], STDOUT_FILENO);
-        dup2(pipefd[1], STDERR_FILENO);
+            if (setpgid(0, 0) == -1)
+                _exit(1);
+
 
         close(pipefd[0]);
         close(pipefd[1]);
@@ -176,6 +214,10 @@ void StartProcess(
             close(pipefd[0]);
 
         }).detach();
+        {
+            std::lock_guard<std::mutex> lock(subprocess_mutex);
+            subprocesses.push_back(pid);
+        }
     }
 
 #endif
@@ -242,7 +284,8 @@ std::vector<std::string> operationlist = {
     "ifn",
     "if",
     "import lib",
-    "commitvaroperation"
+    "commitvaroperation",
+    "killallsubprocess"
 };
 std::vector<std::string> skipsynclist = {
     "Input",
@@ -792,6 +835,34 @@ void addressline(const std::string &lineContent,int *lineid, NetworkSession& ses
                 if(prefix(echo, 7) == "[ERROR]"){
                     std::cout << echo << std::endl;
                     return;
+                }
+                break;
+            } else if(operationlist[i] == "killallsubprocess"){
+                definedoperation=1;
+                {
+                    std::lock_guard<std::mutex> lock(subprocess_mutex);
+#ifdef _WIN32
+                    for (HANDLE hJob : subprocessJobs) {
+                        if (hJob != NULL) {
+                            TerminateJobObject(hJob, 1);
+                            CloseHandle(hJob);
+                        }
+                    }
+                    subprocessJobs.clear();
+                    for (ProcessID pid : subprocesses) {
+                        HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, (DWORD)pid);
+                        if (hProcess != NULL) {
+                            TerminateProcess(hProcess, 0);
+                            CloseHandle(hProcess);
+                        }
+                    }
+#else
+                    for (ProcessID pid : subprocesses) {
+                        kill(-pid, SIGKILL);
+                        kill(pid, SIGKILL);
+                    }
+#endif
+                    subprocesses.clear();
                 }
                 break;
             }
