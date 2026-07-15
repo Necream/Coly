@@ -1,7 +1,7 @@
 # Coly v2.2.1
 
 This document was edited in **English**.
-Translated by **DeepSeek V4 Pro**
+Translated by **GPT-5.4-Mini**
 
 ---
 
