@@ -2,7 +2,7 @@
     "C++": {
         "needcompile": true,
         "extension": "cpp",
-        "compilerun": "g++ -std=c++20 -o ^ $ -I/lib/Coly && ^.exe *",
+        "compilerun": "g++ -std=c++20 -o ^ $ -I/usr/local/include/coly -I/usr/local/include/coly/LanguageSyncLib && ^.exe *",
         "compile": "cl /nologo /std:c++20 /utf-8 /EHsc $ /Fe:^.exe > nul",
         "run": "^.exe *"
     },
@@ -14,6 +14,6 @@
     "Coly": {
         "needcompile": false,
         "extension": "cly",
-        "run": "/lib/Coly/Coly $ *"
+        "run": "/usr/local/bin/coly $ *"
     }
 }

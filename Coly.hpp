@@ -17,8 +17,8 @@ using JSON = nlohmann::json;
 #define COLYPATH "C:\\Coly\\"
 #define TempPATH "C:\\Coly\\TempCode\\"
 #else
-#define COLYPATH "/lib/Coly/"
-#define TempPATH "/usr/local/lib/Coly/TempCode/"
+#define COLYPATH "/usr/local/share/Coly/"
+#define TempPATH "/usr/local/share/Coly/TempCode/"
 #endif
 
 void StartProcess(

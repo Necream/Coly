@@ -68,7 +68,7 @@ int main(int argc, char *argv[]){
     string echo = send_message(session, command);
     // cout<<echo<<endl;
     if(argc==1){
-        useCly(readCly("/lib/Coly/InteractiveColy.cly"),session);
+        useCly(readCly("/usr/local/share/Coly/InteractiveColy.cly"),session);
     }
     if(argc==2){
         useCly(readCly(argv[1]),session);
