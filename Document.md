@@ -1,4 +1,4 @@
-# Coly v2.2.0
+# Coly v2.2.1
 
 This document was edited in **Chinese**.
 
@@ -6,7 +6,7 @@ This document was edited in **Chinese**.
 
 ## 更新的内容
 
-- 修复了server意外删除连接凭据的情况。
+- 修复了Linux下的安装脚本
 
 ## 安装和使用
 
@@ -63,6 +63,9 @@ sudo chown nobody:nogroup /usr/local/share/Coly -R
 请注意，`ColyVariableSyncService`不会加密你的数据。所以如果有数据保护的需求请更改代码删掉所有的输出，不影响**Client**的功能。
 
 ## 更新日志
+
+- 2.2.0
+修复了server意外删除连接凭据的情况。
 
 - 2.0.4
 修复了在为代码块注册时可能出现不注册的情况。

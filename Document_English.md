@@ -1,13 +1,13 @@
-# Coly v2.2.0
+# Coly v2.2.1
 
 This document was edited in **English**.
-Translated by **DeepSeek V4 Pro**
+Translated by **GPT-5.4-Mini**
 
 ---
 
 ## Updated Content
 
-- Fixed an issue where the server would unexpectedly delete connection credentials.
+- Fixed the Linux installation script.
 
 ## Installation and Usage
 
@@ -64,6 +64,9 @@ If you need to use the MSVC compiler toolchain, you need to configure the follow
 Please note that `ColyVariableSyncService` does **not** encrypt your data. If you need data protection, please modify the code to remove all output; this will not affect **Client** functionality.
 
 ## Changelog
+
+- 2.2.1
+Fixed the Linux installation script.
 
 - 2.0.4
 Fixed an issue where code blocks might not register during the registration process.
