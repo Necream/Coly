@@ -1,4 +1,4 @@
-# Coly v2.2.1
+# Coly v2.3.0
 
 This document was edited in **English**.
 Translated by **GPT-5.4-Mini**
@@ -7,7 +7,7 @@ Translated by **GPT-5.4-Mini**
 
 ## Updated Content
 
-- Fixed the Linux installation script.
+- Added the `killallsubprocess` feature, which will be introduced below.
 
 ## Installation and Usage
 
@@ -461,6 +461,13 @@ For example (where `123` is the variable name):
 ```VariableSync
 get var 123
 ```
+
+#### killallsubprocess
+
+This is a new command added starting from `v2.3.0`. It supports forcibly terminating all started subprocesses and their child processes, effectively ending the entire process tree except for the current process itself.
+Please note that any processes created by a child process must have a parent-child relationship with that subprocess, otherwise they cannot be terminated.
+
+This command is not automatically executed when the Coly main process exits. If needed, please add it manually.
 
 ## C++ Language
 

@@ -1,4 +1,4 @@
-# Coly v2.2.1
+# Coly v2.3.0
 
 This document was edited in **Chinese**.
 
@@ -6,7 +6,7 @@ This document was edited in **Chinese**.
 
 ## 更新的内容
 
-- 修复了Linux下的安装脚本
+- 增加了killallsubprocess的功能，会在下面介绍。
 
 ## 安装和使用
 
@@ -63,6 +63,9 @@ sudo chown nobody:nogroup /usr/local/share/Coly -R
 请注意，`ColyVariableSyncService`不会加密你的数据。所以如果有数据保护的需求请更改代码删掉所有的输出，不影响**Client**的功能。
 
 ## 更新日志
+
+- 2.2.1
+修复了Linux下的安装脚本
 
 - 2.2.0
 修复了server意外删除连接凭据的情况。
@@ -460,6 +463,13 @@ get process
 ```VariableSync
 get var 123
 ```
+
+#### killallsubprocess
+
+这是从`v2.3.0`开始新增的指令，支持强制结束所有已经启动的subprocess及其子进程，即结束除自身外的进程树。
+请注意，子进程创建的进程必须和子进程有进程附属关系，否则无法终止。
+
+该指令不会在Coly主进程结束时自动执行。如果有需求请手动添加。
 
 ## C++语言
 

@@ -160,9 +160,11 @@ void StartProcess(
 
     if (pid == 0)
     {
-            if (setpgid(0, 0) == -1)
-                _exit(1);
+        if (setpgid(0, 0) == -1)
+            _exit(1);
 
+        dup2(pipefd[1], STDOUT_FILENO);
+        dup2(pipefd[1], STDERR_FILENO);
 
         close(pipefd[0]);
         close(pipefd[1]);

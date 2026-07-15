@@ -143,7 +143,7 @@ export PATH="$PATH:${COLY_PREFIX}/bin"
 # ===================== Complete =====================
 echo ""
 echo "========================================"
-echo "Coly v2.2.0 Install Success!"
+echo "Coly v2.3.0 Install Success!"
 echo "========================================"
 echo "User: ${REAL_USER}"
 echo "Installed to: ${COLY_PREFIX}"
