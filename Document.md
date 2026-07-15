@@ -10,25 +10,47 @@ This document was edited in **Chinese**.
 
 ## 安装和使用
 
-请你使用安装脚本，或者按照下面的结构手动安装。
+请优先使用安装脚本；如果你需要手动安装，请按照脚本对应的目录结构和步骤进行。
 对于支持的所有系统，你需要安装`ColyPythonSync`库。
 在本项目的`./LanguageSyncLib/ColyPythonSync/`的文件夹中执行`pip install .`
 
-你需要在`Linux`的`/lib/`中创建的文件夹按下面描述的所示
-- **/lib/**
-  - **Coly/**
-    - **Settings/**
-      - **LanguageMap.json（请手动拷贝LanguageMap_Linux.json）**
-    - **VariableSyncService/**
+`install.sh`会将 Linux 版本安装到`/usr/local`下，并创建以下目录：
+- **/usr/local/**
+  - **bin/**
+    - **coly**
+  - **libexec/**
+    - **coly/**
       - **ColyServer**
-    - **VariableSyncLib/（存储了你编写C++代码块时需要用的库，采用了标准的ColyVariableSyncService接口，使用时include "ColyCppSync.hpp"）**
+  - **include/**
+    - **coly/**
       - **json.hpp**
       - **GXPass.hpp**
-      - **NCInt.hpp**
-      - **ColyCppSync.hpp**
       - **VariableSyncService.hpp**
+      - **NCint.hpp**
       - **asio.hpp**
       - **asio/**
+      - **Coly.hpp**
+      - **libVarContainer.hpp**
+      - **ColyCppSync.hpp**
+      - **LanguageSyncLib/**
+        - **ColyCppSync.hpp**
+        - **VariableSyncService.hpp**
+        - **GXPass.hpp**
+        - **json.hpp**
+  - **share/**
+    - **Coly/**
+      - **InteractiveColy.cly**
+      - **LanguageMap.json（请手动拷贝LanguageMap_Linux.json）**
+      - **TempCode/**
+
+脚本还会：
+- 使用`g++ -std=c++20 -pthread`编译`Coly.cpp`和`server.cpp`
+- 将`coly`复制到`/usr/local/bin/`
+- 将`ColyServer`复制到`/usr/local/libexec/coly/`
+- 将配置文件复制到`/usr/local/share/Coly/`
+- 如果检测到`ColyPythonSync/pyproject.toml`，会自动执行`pip3 install`
+- 如果系统支持`systemctl`，会创建并启用`coly.service`；否则会临时启动`ColyServer`
+- 将`/usr/local/bin`加入当前用户的`~/.bashrc`
 
 另外，你需要创建`/usr/local/share/Coly/TempCode`文件夹，并执行
 ```Bash

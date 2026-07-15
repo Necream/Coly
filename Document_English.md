@@ -11,25 +11,47 @@ Translated by **GPT-5.4-Mini**
 
 ## Installation and Usage
 
-Please use the installation script, or follow the structure below to install manually.
+Please prefer the installation script; if you need to install manually, follow the directory structure and steps used by the script.
 For all supported systems, you need to install the `ColyPythonSync` library.
 Execute `pip install .` in the `./LanguageSyncLib/ColyPythonSync/` directory of this project.
 
-You need to create the following folders under `/lib/` on **Linux** as described below:
-- **/lib/**
-  - **Coly/**
-    - **Settings/**
-      - **LanguageMap.json (manually copy LanguageMap_Linux.json)**
-    - **VariableSyncService/**
+`install.sh` installs the Linux version under `/usr/local` and creates the following directories:
+- **/usr/local/**
+  - **bin/**
+    - **coly**
+  - **libexec/**
+    - **coly/**
       - **ColyServer**
-    - **VariableSyncLib/ (stores the libraries you need when writing C++ code blocks, using the standard ColyVariableSyncService interface, include "ColyCppSync.hpp" when using)**
+  - **include/**
+    - **coly/**
       - **json.hpp**
       - **GXPass.hpp**
-      - **NCInt.hpp**
-      - **ColyCppSync.hpp**
       - **VariableSyncService.hpp**
+      - **NCint.hpp**
       - **asio.hpp**
       - **asio/**
+      - **Coly.hpp**
+      - **libVarContainer.hpp**
+      - **ColyCppSync.hpp**
+      - **LanguageSyncLib/**
+        - **ColyCppSync.hpp**
+        - **VariableSyncService.hpp**
+        - **GXPass.hpp**
+        - **json.hpp**
+  - **share/**
+    - **Coly/**
+      - **InteractiveColy.cly**
+      - **LanguageMap.json (manually copy LanguageMap_Linux.json)**
+      - **TempCode/**
+
+The script also:
+- Compiles `Coly.cpp` and `server.cpp` with `g++ -std=c++20 -pthread`
+- Copies `coly` to `/usr/local/bin/`
+- Copies `ColyServer` to `/usr/local/libexec/coly/`
+- Copies the configuration files to `/usr/local/share/Coly/`
+- Runs `pip3 install` automatically if `ColyPythonSync/pyproject.toml` exists
+- Creates and enables `coly.service` via `systemctl` when available; otherwise it starts `ColyServer` for the current session
+- Appends `/usr/local/bin` to the current user's `~/.bashrc`
 
 Additionally, you need to create the `/usr/local/share/Coly/TempCode` folder and execute:
 ```Bash
